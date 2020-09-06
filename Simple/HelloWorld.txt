@@ -1,0 +1,13 @@
+{Testing}
+PROGRAM HelloWorld;
+
+BEGIN
+    i := 0;
+    
+    REPEAT
+        i := i + 1;
+        write('#'); write(i);
+        writeln(': Hello, world!');
+        write('It''s here');
+    UNTIL i = 5;
+END.
