@@ -216,7 +216,7 @@ Node *Parser::parseWhileStatement()
     // Create LOOP, TEST, and NOT nodes.
 	Node *loopNode = new Node(LOOP);
 	Node *testNode = new Node(TEST);
-    Node *not_node =  new Node (NOT);
+    Node *not_node = new Node (NOT);
     lineNumber = currentToken->lineNumber;
     testNode->lineNumber = lineNumber;
 
@@ -241,7 +241,7 @@ Node *Parser::parseWhileStatement()
     	currentToken = scanner->nextToken();
     }
     else{
-    	syntaxError("Expecting DO")
+    	syntaxError("Expecting DO");
     }
 
     // Parse the statement.
@@ -249,8 +249,8 @@ Node *Parser::parseWhileStatement()
     parseStatementList(loopNode, UNTIL);
     loopNode->adopt(parseExpression());
 
-    StatementParser statement_parser(this);
-    loop_node->add_child(statement_parser.parse_statement(token));
+//    StatementParser statement_parser(this);
+//    loop_node->add_child(statement_parser.parse_statement(token));
 
     return loopNode;
 }
