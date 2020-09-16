@@ -102,7 +102,7 @@ Node *Parser::parseStatement()
         case BEGIN		:	stmtNode = parseCompoundStatement();   break;
         case REPEAT		:	stmtNode = parseRepeatStatement();     break;
         case WHILE 		:   stmtNode = parseWhileStatement();     break;
-        case IF			:   stmtNode = parseIfStatement();     break;
+        case IF			:   stmtNode = parseIfStatement();     	break;
         case WRITE 		:   stmtNode = parseWriteStatement();      break;
         case WRITELN 	:   stmtNode = parseWritelnStatement();    break;
         case SEMICOLON 	:   stmtNode = nullptr; break;  // empty statement
@@ -265,7 +265,7 @@ Node *Parser::parseIfStatement()
 	//parse the THEN statement
 	//IF node adopts the statement as the second child
 	ifNode->adopt(parseExpression());
-	currentToken = scanner->nextToken(); //consume
+	currentToken = scanner->nextToken();  // consume
 
 	//Look for else
 	if (currentToken->type == ELSE) {
