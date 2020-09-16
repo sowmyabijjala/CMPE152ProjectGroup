@@ -20,6 +20,7 @@ set<TokenType> Parser::statementFollowers;
 set<TokenType> Parser::relationalOperators;
 set<TokenType> Parser::simpleExpressionOperators;
 set<TokenType> Parser::termOperators;
+set<TokenType> Parser::factorOperators;
 
 void Parser::initialize()
 {
@@ -30,6 +31,7 @@ void Parser::initialize()
     statementStarters.insert(WHILE);
     statementStarters.insert(DO);
     statementStarters.insert(IF);
+    statementStarters.insert(TokenType::IF);
     statementStarters.insert(TokenType::WRITE);
     statementStarters.insert(TokenType::WRITELN);
 
@@ -47,6 +49,8 @@ void Parser::initialize()
 
     termOperators.insert(STAR);
     termOperators.insert(SLASH);
+
+    factorOperators.insert(TokenType::NOT);
 }
 
 Node *Parser::parseProgram()
@@ -102,6 +106,7 @@ Node *Parser::parseStatement()
         case WRITE 		:   stmtNode = parseWriteStatement();      break;
         case WRITELN 	:   stmtNode = parseWritelnStatement();    break;
         case SEMICOLON 	:   stmtNode = nullptr; break;  // empty statement
+
 
         default : syntaxError("Unexpected token");
     }
@@ -216,38 +221,25 @@ Node *Parser::parseWhileStatement()
 {
     // The current token should now be WHILE.
 
-    // Create LOOP, TEST, and NOT nodes.
+	// Create a LOOP node->
 	Node *loopNode = new Node(LOOP);
+	currentToken = scanner->nextToken(); // consume WHILE
+
 	Node *testNode = new Node(TEST);
-//    Node *not_node = new Node (NOT);
-	Node *not_node = new Node (TEST);
-    lineNumber = currentToken->lineNumber;
-    testNode->lineNumber = lineNumber;
+	Node *notNode = new Node(NodeType::NOT);
 
-	currentToken = scanner->nextToken();  // consume the WHILE
+	notNode->adopt(parseExpression());
+	testNode->adopt(notNode);
+	loopNode->adopt(testNode);
 
-    // The TEST node adopts the NOT node as its only child.
-    testNode->adopt(not_node);
+	//missing some line # stuff still
 
-    // The LOOP node adopts the TEST node as its first child.
-    loopNode->adopt(testNode);
-
-    // Parse the expression.
-    // The NOT node adopts the expression subtree as its only child.
-    not_node->adopt(parseExpression());
-
-    // Synchronize at the DO.
-
-    if (currentToken->type == DO){
-    	//consume the do
-    	currentToken = scanner->nextToken();
-    }
-    else{
-    	syntaxError("Expecting DO");
-    }
-
-    parseStatementList(loopNode, UNTIL);
-    loopNode->adopt(parseExpression());
+	if (currentToken->type == DO) {
+		currentToken = scanner->nextToken(); //consume DO?
+		loopNode->adopt(parseStatement());
+	}
+	else
+		syntaxError("Expecting DO");
 
     return loopNode;
 }
@@ -255,16 +247,37 @@ Node *Parser::parseWhileStatement()
 Node *Parser::parseIfStatement()
 {
     // The current token should now be IF.
+	Node *ifNode = new Node(IF);
 	currentToken = scanner->nextToken();  // consume IF
-	Node *IfNode = new Node(IF);
+
 
 	//Parse the expression.
 	// The IF node adopts the expression subtree as its first child.
-	IfNode->adopt(parseExpression());
+	ifNode->adopt(parseExpression());
 
 	//Find the THEN
+	if (currentToken->type == THEN) {
+		currentToken = scanner->nextToken(); //consume THEN
+	}
+	else
+		syntaxError("Expecting THEN");
+
+	//parse the THEN statement
+	//IF node adopts the statement as the second child
+	ifNode->adopt(parseExpression());
+	currentToken = scanner->nextToken(); //consume
+
+	//Look for else
+	if (currentToken->type == ELSE) {
+		currentToken = scanner->nextToken(); //consume ELSE
+
+		//Parse the else Statement
+		//IF node adopts the statement as the third child
+		ifNode->adopt(parseExpression());
+	}
 
 
+	return ifNode;
 }
 
 
@@ -529,6 +542,7 @@ void Parser::syntaxError(string message)
     currentToken = scanner->nextToken();
     // Recover by skipping the rest of the statement.
     // Skip to a statement follower token.
+    printf("recovery attempt");
     while (statementFollowers.find(currentToken->type) ==
                                                     statementFollowers.end())
     {
