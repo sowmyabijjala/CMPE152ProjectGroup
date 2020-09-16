@@ -20,28 +20,38 @@ set<TokenType> Parser::statementFollowers;
 set<TokenType> Parser::relationalOperators;
 set<TokenType> Parser::simpleExpressionOperators;
 set<TokenType> Parser::termOperators;
+set<TokenType> Parser::factorOperators;
 
 void Parser::initialize()
 {
     statementStarters.insert(BEGIN);
     statementStarters.insert(IDENTIFIER);
     statementStarters.insert(REPEAT);
+    statementStarters.insert(WHILE);
     statementStarters.insert(TokenType::WRITE);
     statementStarters.insert(TokenType::WRITELN);
 
     statementFollowers.insert(SEMICOLON);
     statementFollowers.insert(END);
     statementFollowers.insert(UNTIL);
+    statementFollowers.insert(DO);
     statementFollowers.insert(END_OF_FILE);
 
+    //expression operators
     relationalOperators.insert(EQUALS);
     relationalOperators.insert(LESS_THAN);
+    //LESS EQUALS, GREATER THAN, GREATER EQUALS, NOT EQUALS
 
     simpleExpressionOperators.insert(PLUS);
     simpleExpressionOperators.insert(MINUS);
+    //OR
 
     termOperators.insert(STAR);
     termOperators.insert(SLASH);
+    //DIV, MOD, AND
+
+    //factorOperators.insert(NOT);
+    factorOperators.insert(TokenType::NOT);
 }
 
 Node *Parser::parseProgram()
@@ -92,6 +102,8 @@ Node *Parser::parseStatement()
         case IDENTIFIER : stmtNode = parseAssignmentStatement(); break;
         case BEGIN :      stmtNode = parseCompoundStatement();   break;
         case REPEAT :     stmtNode = parseRepeatStatement();     break;
+        case WHILE:		  stmtNode = parseWhileStatement(); 	 break;
+        case IF:		  stmtNode = parseIfStatement();		 break;
         case WRITE :      stmtNode = parseWriteStatement();      break;
         case WRITELN :    stmtNode = parseWritelnStatement();    break;
         case SEMICOLON :  stmtNode = nullptr; break;  // empty statement
@@ -198,6 +210,33 @@ Node *Parser::parseRepeatStatement()
         loopNode->adopt(testNode);
     }
     else syntaxError("Expecting UNTIL");
+
+    return loopNode;
+}
+
+Node *Parser::parseWhileStatement()
+{
+    // The current token should now be WHILE.
+
+	// Create a LOOP node->
+	Node *loopNode = new Node(LOOP);
+	currentToken = scanner->nextToken(); // consume WHILE
+
+	Node *testNode = new Node(TEST);
+	Node *notNode = new Node(NodeType::NOT);
+
+	notNode->adopt(parseExpression());
+	testNode->adopt(notNode);
+	loopNode->adopt(testNode);
+
+	//missing some line # stuff still
+
+	if (currentToken->type == DO) {
+		currentToken = scanner->nextToken(); //consume DO?
+		loopNode->adopt(parseStatement());
+	}
+	else
+		syntaxError("Expecting DO");
 
     return loopNode;
 }
@@ -457,6 +496,7 @@ void Parser::syntaxError(string message)
            lineNumber, message.c_str(), currentToken->text.c_str());
     errorCount++;
 
+    printf("recovery attempt");
     // Recover by skipping the rest of the statement.
     // Skip to a statement follower token.
     while (statementFollowers.find(currentToken->type) ==

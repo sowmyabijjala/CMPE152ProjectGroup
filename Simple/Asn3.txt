@@ -1,0 +1,14 @@
+PROGRAM Asn3;
+BEGIN
+{	i:=1;
+	k:=2;
+	WHILE i<4 
+	DO k:=i		}
+
+	i := 1;
+	WHILE i<4 DO BEGIN
+		write(i);
+        writeln(': Hello');
+        i := i+1;
+    END 
+END.
