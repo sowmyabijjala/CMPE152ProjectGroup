@@ -28,6 +28,8 @@ void Parser::initialize()
     statementStarters.insert(IDENTIFIER);
     statementStarters.insert(REPEAT);
     statementStarters.insert(WHILE);
+    statementStarters.insert(DO);
+    statementStarters.insert(IF);
     statementStarters.insert(TokenType::WRITE);
     statementStarters.insert(TokenType::WRITELN);
 
@@ -92,13 +94,14 @@ Node *Parser::parseStatement()
 
     switch (currentToken->type)
     {
-        case IDENTIFIER : stmtNode = parseAssignmentStatement(); break;
-        case BEGIN :      stmtNode = parseCompoundStatement();   break;
-        case REPEAT :     stmtNode = parseRepeatStatement();     break;
-        case WHILE :     stmtNode = parseWhileStatement();     break;
-        case WRITE :      stmtNode = parseWriteStatement();      break;
-        case WRITELN :    stmtNode = parseWritelnStatement();    break;
-        case SEMICOLON :  stmtNode = nullptr; break;  // empty statement
+        case IDENTIFIER	:	stmtNode = parseAssignmentStatement(); break;
+        case BEGIN		:	stmtNode = parseCompoundStatement();   break;
+        case REPEAT		:	stmtNode = parseRepeatStatement();     break;
+        case WHILE 		:   stmtNode = parseWhileStatement();     break;
+        case IF			:   stmtNode = parseIfStatement();     break;
+        case WRITE 		:   stmtNode = parseWriteStatement();      break;
+        case WRITELN 	:   stmtNode = parseWritelnStatement();    break;
+        case SEMICOLON 	:   stmtNode = nullptr; break;  // empty statement
 
         default : syntaxError("Unexpected token");
     }
@@ -211,31 +214,59 @@ Node *Parser::parseRepeatStatement()
 
 Node *Parser::parseWhileStatement()
 {
-    // The current token should now be REPEAT.
+    // The current token should now be WHILE.
 
-    // Create a LOOP node.
-    Node *loopNode = new Node(LOOP);
-    currentToken = scanner->nextToken();  // consume REPEAT
+    // Create LOOP, TEST, and NOT nodes.
+	Node *loopNode = new Node(LOOP);
+	Node *testNode = new Node(TEST);
+//    Node *not_node = new Node (NOT);
+	Node *not_node = new Node (TEST);
+    lineNumber = currentToken->lineNumber;
+    testNode->lineNumber = lineNumber;
+
+	currentToken = scanner->nextToken();  // consume the WHILE
+
+    // The TEST node adopts the NOT node as its only child.
+    testNode->adopt(not_node);
+
+    // The LOOP node adopts the TEST node as its first child.
+    loopNode->adopt(testNode);
+
+    // Parse the expression.
+    // The NOT node adopts the expression subtree as its only child.
+    not_node->adopt(parseExpression());
+
+    // Synchronize at the DO.
+
+    if (currentToken->type == DO){
+    	//consume the do
+    	currentToken = scanner->nextToken();
+    }
+    else{
+    	syntaxError("Expecting DO");
+    }
 
     parseStatementList(loopNode, UNTIL);
-
-    if (currentToken->type == UNTIL)
-    {
-        // Create a TEST node. It adopts the test expression node.
-        Node *testNode = new Node(TEST);
-        lineNumber = currentToken->lineNumber;
-        testNode->lineNumber = lineNumber;
-        currentToken = scanner->nextToken();  // consume UNTIL
-
-        testNode->adopt(parseExpression());
-
-        // The LOOP node adopts the TEST node as its final child.
-        loopNode->adopt(testNode);
-    }
-    else syntaxError("Expecting UNTIL");
+    loopNode->adopt(parseExpression());
 
     return loopNode;
 }
+
+Node *Parser::parseIfStatement()
+{
+    // The current token should now be IF.
+	currentToken = scanner->nextToken();  // consume IF
+	Node *IfNode = new Node(IF);
+
+	//Parse the expression.
+	// The IF node adopts the expression subtree as its first child.
+	IfNode->adopt(parseExpression());
+
+	//Find the THEN
+
+
+}
+
 
 Node *Parser::parseWriteStatement()
 {
@@ -494,6 +525,8 @@ void Parser::syntaxError(string message)
            lineNumber, message.c_str(), currentToken->text.c_str());
     errorCount++;
 
+    //ADDED IN - need ed linke 517  in order for it not to be a infinite loop
+    currentToken = scanner->nextToken();
     // Recover by skipping the rest of the statement.
     // Skip to a statement follower token.
     while (statementFollowers.find(currentToken->type) ==
