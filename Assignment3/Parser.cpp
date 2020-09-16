@@ -211,46 +211,28 @@ Node *Parser::parseRepeatStatement()
 
 Node *Parser::parseWhileStatement()
 {
-    // The current token should now be WHILE.
+    // The current token should now be REPEAT.
 
-    // Create LOOP, TEST, and NOT nodes.
-	Node *loopNode = new Node(LOOP);
-	Node *testNode = new Node(TEST);
-    Node *not_node = new Node (NOT);
-    lineNumber = currentToken->lineNumber;
-    testNode->lineNumber = lineNumber;
+    // Create a LOOP node.
+    Node *loopNode = new Node(LOOP);
+    currentToken = scanner->nextToken();  // consume REPEAT
 
-	currentToken = scanner->nextToken();  // consume the WHILE
-
-
-    // The LOOP node adopts the TEST node as its first child.
-    loopNode->adopt(testNode);
-
-    // The TEST node adopts the NOT node as its only child.
-    testNode->adopt(not_node);
-
-    // Parse the expression.
-    // The NOT node adopts the expression subtree as its only child.
-    not_node->adopt(parseExpression());
-
-
-    // Synchronize at the DO.
-
-    if (currentToken->type == DO){
-    	//consume the do
-    	currentToken = scanner->nextToken();
-    }
-    else{
-    	syntaxError("Expecting DO");
-    }
-
-    // Parse the statement.
-    // The LOOP node adopts the statement subtree as its second child.
     parseStatementList(loopNode, UNTIL);
-    loopNode->adopt(parseExpression());
 
-//    StatementParser statement_parser(this);
-//    loop_node->add_child(statement_parser.parse_statement(token));
+    if (currentToken->type == UNTIL)
+    {
+        // Create a TEST node. It adopts the test expression node.
+        Node *testNode = new Node(TEST);
+        lineNumber = currentToken->lineNumber;
+        testNode->lineNumber = lineNumber;
+        currentToken = scanner->nextToken();  // consume UNTIL
+
+        testNode->adopt(parseExpression());
+
+        // The LOOP node adopts the TEST node as its final child.
+        loopNode->adopt(testNode);
+    }
+    else syntaxError("Expecting UNTIL");
 
     return loopNode;
 }
