@@ -352,319 +352,312 @@ Node *Parser::parseIfStatement() {
 	return ifNode;
 }
 
+Node *Parser::parseCaseStatement() {
+	// The current token should now be CASE
 
-Node *Parser::parseCaseStatement()
-{
-    // The current token should now be CASE
-
-    // Create LOOP, TEST, and NOT nodes.
+	// Create LOOP, TEST, and NOT nodes.
 //    Node *not_node = new Node (NOT);
-	Node *case_node = new Node (LOOP);
-    lineNumber = currentToken->lineNumber;
-    case_node->lineNumber = lineNumber;
+	Node *case_node = new Node(LOOP);
+	lineNumber = currentToken->lineNumber;
+	case_node->lineNumber = lineNumber;
 
 	currentToken = scanner->nextToken();  // consume the CASE
 
+	// The TEST node adopts the expression of case as its first child
+	case_node->adopt(parseExpression());
 
-    // The TEST node adopts the expression of case as its first child
-    case_node->adopt(parseExpression());
+	//Find the Case option
+	if (currentToken->type == OF) {
+		currentToken = scanner->nextToken();  // consume the OF
+	} else {
+		syntaxError("Expecting OF");
+	}
+	//starts looping through each case line until case is finished
+	while (currentToken->type != END) {
+		//check to make sure it starts with a case label
+		if (currentToken->type == COLON) {
+			//missing case label error
+			syntaxError("Expecting case before :");
+		} else if (currentToken->type != SEMICOLON) {
+			//create a child with the case label
+			case_node->adopt(parseExpression());
+		} else {
+			syntaxError("missing case expression");
+		}
+		//Find the :
+		if (currentToken->type == COLON) {
+			currentToken = scanner->nextToken();   // consume the :
+		} else {
+			//missing : after case label
+			//TODO
+			syntaxError("Expecting :");
+		}
+		if (currentToken->type != SEMICOLON) {
+			//create a child with the case expression
+			case_node->adopt(parseExpression());
+		} else {
+			syntaxError("Missing case expression");
+		}
+		if (currentToken->type == SEMICOLON) {
+			currentToken = scanner->nextToken();  // consume the ;
+		} else {
+			syntaxError("Expected ;");
+		}
+	}
 
-
-    //Find the Case option
-    if (currentToken->type == OF){
-        currentToken = scanner->nextToken();  // consume the OF
-    }
-    else {
-        syntaxError("Expecting OF");
-    }
-    //starts looping through each case line until case is finished
-    while (currentToken->type != END){
-        //check to make sure it starts with a case label
-        if (currentToken->type == COLON){
-            //missing case label error
-            syntaxError("Expecting case before :");
-        }
-        else if (currentToken->type != SEMICOLON){
-            //create a child with the case label
-            case_node->adopt(parseExpression());
-        }
-        else {
-            syntaxError("missing case expression");
-        }
-        //Find the :
-        if (currentToken->type == COLON){
-                currentToken = scanner->nextToken();   // consume the :
-        }
-        else {
-            //missing : after case label
-            syntaxError("Expecting :");
-        }
-        if (currentToken->type != SEMICOLON){
-            //create a child with the case expression
-            case_node->adopt(parseExpression());
-        }
-        else {
-            syntaxError("Missing case expression");
-        }
-        if (currentToken->type == SEMICOLON){
-        	currentToken = scanner->nextToken();  // consume the ;
-        }
-        else {
-            syntaxError("Expected ;");
-        }
-    }
-
-    return case_node;
+	return case_node;
 }
-
 
 Node *Parser::parseWriteStatement() {
 // The current token should now be WRITE.
 
 // Create a WRITE node-> It adopts the variable or string node.
-Node *writeNode = new Node(NodeType::WRITE);
-currentToken = scanner->nextToken();  // consume WRITE
+	Node *writeNode = new Node(NodeType::WRITE);
+	currentToken = scanner->nextToken();  // consume WRITE
 
-parseWriteArguments(writeNode);
-if (writeNode->children.size() == 0) {
-	syntaxError("Invalid WRITE statement");
-}
+	parseWriteArguments(writeNode);
+	if (writeNode->children.size() == 0) {
+		syntaxError("Invalid WRITE statement");
+	}
 
-return writeNode;
+	return writeNode;
 }
 
 Node *Parser::parseWritelnStatement() {
 // The current token should now be WRITELN.
 
 // Create a WRITELN node. It adopts the variable or string node.
-Node *writelnNode = new Node(NodeType::WRITELN);
-currentToken = scanner->nextToken();  // consume WRITELN
+	Node *writelnNode = new Node(NodeType::WRITELN);
+	currentToken = scanner->nextToken();  // consume WRITELN
 
-if (currentToken->type == LPAREN)
-	parseWriteArguments(writelnNode);
-return writelnNode;
+	if (currentToken->type == LPAREN)
+		parseWriteArguments(writelnNode);
+	return writelnNode;
 }
 
 void Parser::parseWriteArguments(Node *node) {
 // The current token should now be (
 
-bool hasArgument = false;
+	bool hasArgument = false;
 
-if (currentToken->type == LPAREN) {
-	currentToken = scanner->nextToken();  // consume (
-} else
-	syntaxError("Missing left parenthesis");
+	if (currentToken->type == LPAREN) {
+		currentToken = scanner->nextToken();  // consume (
+	} else
+		syntaxError("Missing left parenthesis");
 
-if (currentToken->type == IDENTIFIER) {
-	node->adopt(parseVariable());
-	hasArgument = true;
-} else if ((currentToken->type == CHARACTER)
-		|| (currentToken->type == STRING)) {
-	node->adopt(parseStringConstant());
-	hasArgument = true;
-} else
-	syntaxError("Invalid WRITE or WRITELN statement");
+	if (currentToken->type == IDENTIFIER) {
+		node->adopt(parseVariable());
+		hasArgument = true;
+	} else if ((currentToken->type == CHARACTER)
+			|| (currentToken->type == STRING)) {
+		node->adopt(parseStringConstant());
+		hasArgument = true;
+	} else
+		syntaxError("Invalid WRITE or WRITELN statement");
 
 // Look for a field width and a count of decimal places.
-if (hasArgument) {
-	if (currentToken->type == COLON) {
-		currentToken = scanner->nextToken();  // consume ,
+	if (hasArgument) {
+		if (currentToken->type == COLON) {
+			currentToken = scanner->nextToken();  // consume ,
 
-		if (currentToken->type == INTEGER) {
-			// Field width
-			node->adopt(parseIntegerConstant());
+			if (currentToken->type == INTEGER) {
+				// Field width
+				node->adopt(parseIntegerConstant());
 
-			if (currentToken->type == COLON) {
-				currentToken = scanner->nextToken();  // consume ,
+				if (currentToken->type == COLON) {
+					currentToken = scanner->nextToken();  // consume ,
 
-				if (currentToken->type == INTEGER) {
-					// Count of decimal places
-					node->adopt(parseIntegerConstant());
-				} else
-					syntaxError("Invalid count of decimal places");
-			}
-		} else
-			syntaxError("Invalid field width");
+					if (currentToken->type == INTEGER) {
+						// Count of decimal places
+						node->adopt(parseIntegerConstant());
+					} else
+						syntaxError("Invalid count of decimal places");
+				}
+			} else
+				syntaxError("Invalid field width");
+		}
 	}
-}
 
-if (currentToken->type == RPAREN) {
-	currentToken = scanner->nextToken();  // consume )
-} else
-	syntaxError("Missing right parenthesis");
+	if (currentToken->type == RPAREN) {
+		currentToken = scanner->nextToken();  // consume )
+	} else
+		syntaxError("Missing right parenthesis");
 }
 
 Node *Parser::parseExpression() {
 // The current token should now be an identifier or a number.
 
 // The expression's root node->
-Node *exprNode = parseSimpleExpression();
+	Node *exprNode = parseSimpleExpression();
 
 // The current token might now be a relational operator.
-if (relationalOperators.find(currentToken->type) != relationalOperators.end()) {
-	TokenType tokenType = currentToken->type;
-	Node *opNode = tokenType == EQUALS ? new Node(EQ) :
-					tokenType == LESS_THAN ? new Node(LT) : nullptr;
+	if (relationalOperators.find(currentToken->type)
+			!= relationalOperators.end()) {
+		TokenType tokenType = currentToken->type;
+		Node *opNode = tokenType == EQUALS ? new Node(EQ) :
+						tokenType == LESS_THAN ? new Node(LT) : nullptr;
 
-	currentToken = scanner->nextToken();  // consume relational operator
+		currentToken = scanner->nextToken();  // consume relational operator
 
-	// The relational operator node adopts the first simple expression
-	// node as its first child and the second simple expression node
-	// as its second child. Then it becomes the expression's root node.
-	if (opNode != nullptr) {
-		opNode->adopt(exprNode);
-		opNode->adopt(parseSimpleExpression());
-		exprNode = opNode;
+		// The relational operator node adopts the first simple expression
+		// node as its first child and the second simple expression node
+		// as its second child. Then it becomes the expression's root node.
+		if (opNode != nullptr) {
+			opNode->adopt(exprNode);
+			opNode->adopt(parseSimpleExpression());
+			exprNode = opNode;
+		}
 	}
-}
 
-return exprNode;
+	return exprNode;
 }
 
 Node *Parser::parseSimpleExpression() {
 // The current token should now be an identifier or a number.
 
 // The simple expression's root node->
-Node *simpExprNode = parseTerm();
+	Node *simpExprNode = parseTerm();
 
 // Keep parsing more terms as long as the current token
 // is a + or - operator.
-while (simpleExpressionOperators.find(currentToken->type)
-		!= simpleExpressionOperators.end()) {
-	Node *opNode =
-			currentToken->type == PLUS ? new Node(ADD) : new Node(SUBTRACT);
+	while (simpleExpressionOperators.find(currentToken->type)
+			!= simpleExpressionOperators.end()) {
+		Node *opNode =
+				currentToken->type == PLUS ? new Node(ADD) : new Node(SUBTRACT);
 
-	currentToken = scanner->nextToken();  // consume the operator
+		currentToken = scanner->nextToken();  // consume the operator
 
-	// The add or subtract node adopts the first term node as its
-	// first child and the next term node as its second child.
-	// Then it becomes the simple expression's root node.
-	opNode->adopt(simpExprNode);
-	opNode->adopt(parseTerm());
-	simpExprNode = opNode;
-}
+		// The add or subtract node adopts the first term node as its
+		// first child and the next term node as its second child.
+		// Then it becomes the simple expression's root node.
+		opNode->adopt(simpExprNode);
+		opNode->adopt(parseTerm());
+		simpExprNode = opNode;
+	}
 
-return simpExprNode;
+	return simpExprNode;
 }
 
 Node *Parser::parseTerm() {
 // The current token should now be an identifier or a number.
 
 // The term's root node->
-Node *termNode = parseFactor();
+	Node *termNode = parseFactor();
 
 // Keep parsing more factors as long as the current token
 // is a * or / operator.
-while (termOperators.find(currentToken->type) != termOperators.end()) {
-	Node *opNode =
-			currentToken->type == STAR ? new Node(MULTIPLY) : new Node(DIVIDE);
+	while (termOperators.find(currentToken->type) != termOperators.end()) {
+		Node *opNode =
+				currentToken->type == STAR ?
+						new Node(MULTIPLY) : new Node(DIVIDE);
 
-	currentToken = scanner->nextToken();  // consume the operator
+		currentToken = scanner->nextToken();  // consume the operator
 
-	// The multiply or divide node adopts the first factor node as its
-	// as its first child and the next factor node as its second child.
-	// Then it becomes the term's root node.
-	opNode->adopt(termNode);
-	opNode->adopt(parseFactor());
-	termNode = opNode;
-}
+		// The multiply or divide node adopts the first factor node as its
+		// as its first child and the next factor node as its second child.
+		// Then it becomes the term's root node.
+		opNode->adopt(termNode);
+		opNode->adopt(parseFactor());
+		termNode = opNode;
+	}
 
-return termNode;
+	return termNode;
 }
 
 Node *Parser::parseFactor() {
 // The current token should now be an identifier or a number or (
 
-if (currentToken->type == IDENTIFIER)
-	return parseVariable();
-else if (currentToken->type == INTEGER)
-	return parseIntegerConstant();
-else if (currentToken->type == REAL)
-	return parseRealConstant();
+	if (currentToken->type == IDENTIFIER)
+		return parseVariable();
+	else if (currentToken->type == INTEGER)
+		return parseIntegerConstant();
+	else if (currentToken->type == REAL)
+		return parseRealConstant();
 
-else if (currentToken->type == LPAREN) {
-	currentToken = scanner->nextToken();  // consume (
-	Node *exprNode = parseExpression();
+	else if (currentToken->type == LPAREN) {
+		currentToken = scanner->nextToken();  // consume (
+		Node *exprNode = parseExpression();
 
-	if (currentToken->type == RPAREN) {
-		currentToken = scanner->nextToken();  // consume )
-	} else
-		syntaxError("Expecting )");
+		if (currentToken->type == RPAREN) {
+			currentToken = scanner->nextToken();  // consume )
+		} else
+			syntaxError("Expecting )");
 
-	return exprNode;
-}
+		return exprNode;
+	}
 
-else
-	syntaxError("Unexpected token");
-return nullptr;
+	else
+		syntaxError("Unexpected token");
+	return nullptr;
 }
 
 Node *Parser::parseVariable() {
 // The current token should now be an identifier.
 
 // Has the variable been "declared"?
-string variableName = currentToken->text;
-SymtabEntry *variableId = symtab->lookup(toLowerCase(variableName));
-if (variableId == nullptr)
-	semanticError("Undeclared identifier");
+	string variableName = currentToken->text;
+	SymtabEntry *variableId = symtab->lookup(toLowerCase(variableName));
+	if (variableId == nullptr)
+		semanticError("Undeclared identifier");
 
-Node *node = new Node(VARIABLE);
-node->text = variableName;
-node->entry = variableId;
+	Node *node = new Node(VARIABLE);
+	node->text = variableName;
+	node->entry = variableId;
 
-currentToken = scanner->nextToken();  // consume the identifier
-return node;
+	currentToken = scanner->nextToken();  // consume the identifier
+	return node;
 }
 
 Node *Parser::parseIntegerConstant() {
 // The current token should now be a number.
 
-Node *integerNode = new Node(INTEGER_CONSTANT);
-integerNode->value = currentToken->value;
+	Node *integerNode = new Node(INTEGER_CONSTANT);
+	integerNode->value = currentToken->value;
 
-currentToken = scanner->nextToken();  // consume the number
-return integerNode;
+	currentToken = scanner->nextToken();  // consume the number
+	return integerNode;
 }
 
 Node *Parser::parseRealConstant() {
 // The current token should now be a number.
 
-Node *realNode = new Node(REAL_CONSTANT);
-realNode->value = currentToken->value;
+	Node *realNode = new Node(REAL_CONSTANT);
+	realNode->value = currentToken->value;
 
-currentToken = scanner->nextToken();  // consume the number
-return realNode;
+	currentToken = scanner->nextToken();  // consume the number
+	return realNode;
 }
 
 Node *Parser::parseStringConstant() {
 // The current token should now be string.
 
-Node *stringNode = new Node(STRING_CONSTANT);
-stringNode->value = currentToken->value;
+	Node *stringNode = new Node(STRING_CONSTANT);
+	stringNode->value = currentToken->value;
 
-currentToken = scanner->nextToken();  // consume the string
-return stringNode;
+	currentToken = scanner->nextToken();  // consume the string
+	return stringNode;
 }
 
 void Parser::syntaxError(string message) {
-printf("SYNTAX ERROR at line %d: %s at '%s'\n", lineNumber, message.c_str(),
-		currentToken->text.c_str());
-errorCount++;
+	printf("SYNTAX ERROR at line %d: %s at '%s'\n", lineNumber, message.c_str(),
+			currentToken->text.c_str());
+	errorCount++;
 
 //ADDED IN - needed line 517  in order for it not to be a infinite loop
-currentToken = scanner->nextToken();
+	currentToken = scanner->nextToken();
 // Recover by skipping the rest of the statement.
 // Skip to a statement follower token.
 //    printf("recovery attempt \n");
-while (statementFollowers.find(currentToken->type) == statementFollowers.end()) {
-	currentToken = scanner->nextToken();
-}
+	while (statementFollowers.find(currentToken->type)
+			== statementFollowers.end()) {
+		currentToken = scanner->nextToken();
+	}
 }
 
 void Parser::semanticError(string message) {
-printf("SEMANTIC ERROR at line %d: %s at '%s'\n", lineNumber, message.c_str(),
-		currentToken->text.c_str());
-errorCount++;
+	printf("SEMANTIC ERROR at line %d: %s at '%s'\n", lineNumber,
+			message.c_str(), currentToken->text.c_str());
+	errorCount++;
 }
 
 }  // namespace frontend
