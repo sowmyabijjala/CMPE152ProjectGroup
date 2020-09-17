@@ -31,7 +31,7 @@ private:
 
     static set<TokenType> statementStarters;          // what starts a statement
     static set<TokenType> statementFollowers;         // what follows a statement
-    static set<TokenType> relationalOperators;        // relational operators
+    static set<TokenType> relationalOperators;        // relational (expression) operators
     static set<TokenType> simpleExpressionOperators;  // simple expression operators
     static set<TokenType> termOperators;              // term operators
     static set<TokenType> factorOperators;			  // factor operators (but this is just NOT)
@@ -53,10 +53,10 @@ public:
 private:
     Node *parseStatement();
     Node *parseAssignmentStatement();
+    Node *parseForAssignmentStatement(string var);
     Node *parseCompoundStatement();
     Node *parseRepeatStatement();
     Node *parseWhileStatement();
-    Node *parseIfStatement();
     Node *parseForStatement();
     Node *parseWriteStatement();
     Node *parseWritelnStatement();
