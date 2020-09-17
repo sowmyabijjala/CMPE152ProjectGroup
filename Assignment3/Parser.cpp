@@ -290,8 +290,6 @@ Node *Parser::parseCaseStatement()
     // The current token should now be CASE
 
     // Create LOOP, TEST, and NOT nodes.
-    Node *selectNode = new Node(SELECT);
-
 //    Node *not_node = new Node (NOT);
 	Node *case_node = new Node (LOOP);
     lineNumber = currentToken->lineNumber;
@@ -314,7 +312,7 @@ Node *Parser::parseCaseStatement()
     //starts looping through each case line until case is finished
     while (currentToken->type != END){
         //check to make sure it starts with a case label
-        if (currentTOken->type == :)[
+        if (currentToken->type == :)[
             //missing case label error
             syntaxError("Expecting case before :");
         ]

@@ -24,34 +24,36 @@ set<TokenType> Parser::factorOperators;
 
 void Parser::initialize()
 {
+    // Tokens that can start a statement.
     statementStarters.insert(BEGIN);
     statementStarters.insert(IDENTIFIER);
     statementStarters.insert(REPEAT);
     statementStarters.insert(WHILE);
+    statementStarters.insert(DO);
+    statementStarters.insert(IF);
+    statementStarters.insert(CASE);
+    statementStarters.insert(OF);
     statementStarters.insert(TokenType::WRITE);
     statementStarters.insert(TokenType::WRITELN);
 
+    // Tokens that can immediately follow a statement.
     statementFollowers.insert(SEMICOLON);
     statementFollowers.insert(END);
     statementFollowers.insert(UNTIL);
-    statementFollowers.insert(DO);
     statementFollowers.insert(END_OF_FILE);
 
-    //expression operators
     relationalOperators.insert(EQUALS);
     relationalOperators.insert(LESS_THAN);
-    //LESS EQUALS, GREATER THAN, GREATER EQUALS, NOT EQUALS
+    relationalOperators.insert(GREATER_THAN);
 
     simpleExpressionOperators.insert(PLUS);
     simpleExpressionOperators.insert(MINUS);
-    //OR
 
     termOperators.insert(STAR);
     termOperators.insert(SLASH);
-    //DIV, MOD, AND
 
-    //factorOperators.insert(NOT);
     factorOperators.insert(TokenType::NOT);
+    factorOperators.insert(TokenType::IF);
 }
 
 Node *Parser::parseProgram()
@@ -99,14 +101,15 @@ Node *Parser::parseStatement()
 
     switch (currentToken->type)
     {
-        case IDENTIFIER : stmtNode = parseAssignmentStatement(); break;
-        case BEGIN :      stmtNode = parseCompoundStatement();   break;
-        case REPEAT :     stmtNode = parseRepeatStatement();     break;
-        case WHILE:		  stmtNode = parseWhileStatement(); 	 break;
-        case IF:		  stmtNode = parseIfStatement();		 break;
-        case WRITE :      stmtNode = parseWriteStatement();      break;
-        case WRITELN :    stmtNode = parseWritelnStatement();    break;
-        case SEMICOLON :  stmtNode = nullptr; break;  // empty statement
+        case IDENTIFIER	:	stmtNode = parseAssignmentStatement(); break;
+        case BEGIN		:	stmtNode = parseCompoundStatement();   break;
+        case REPEAT		:	stmtNode = parseRepeatStatement();     break;
+        case WHILE 		:   stmtNode = parseWhileStatement();     break;
+        case IF			:   stmtNode = parseIfStatement();     	break;
+        case WRITE 		:   stmtNode = parseWriteStatement();      break;
+        case WRITELN 	:   stmtNode = parseWritelnStatement();    break;
+        case SEMICOLON 	:   stmtNode = nullptr; break;  // empty statement
+
 
         default : syntaxError("Unexpected token");
     }
@@ -121,11 +124,14 @@ Node *Parser::parseAssignmentStatement()
 
     Node *assignmentNode = new Node(ASSIGN);
 
-    // The assignment Node *adopts the variable Node *as its first child.
-    Node *lhsNode = new Node(VARIABLE);
+    // Enter the variable name into the symbol table
+    // if it isn't already in there.
     string variableName = currentToken->text;
-    SymtabEntry *variableId = symtab->enter(toLowerCase(variableName));
+    SymtabEntry *variableId = symtab->lookup(toLowerCase(variableName));
+    if (variableId == nullptr) variableId = symtab->enter(variableName);
 
+    // The assignment node adopts the variable node as its first child.
+    Node *lhsNode  = new Node(VARIABLE);
     lhsNode->text  = variableName;
     lhsNode->entry = variableId;
     assignmentNode->adopt(lhsNode);
@@ -138,7 +144,7 @@ Node *Parser::parseAssignmentStatement()
     }
     else syntaxError("Missing :=");
 
-    // The assignment Node *adopts the expression Node *as its second child.
+    // The assignment node adopts the expression node as its second child.
     Node *rhsNode = parseExpression();
     assignmentNode->adopt(rhsNode);
 
@@ -190,7 +196,7 @@ Node *Parser::parseRepeatStatement()
 {
     // The current token should now be REPEAT.
 
-    // Create a LOOP node->
+    // Create a LOOP node.
     Node *loopNode = new Node(LOOP);
     currentToken = scanner->nextToken();  // consume REPEAT
 
@@ -198,7 +204,7 @@ Node *Parser::parseRepeatStatement()
 
     if (currentToken->type == UNTIL)
     {
-        // Create a TEST node-> It adopts the test expression node->
+        // Create a TEST node. It adopts the test expression node.
         Node *testNode = new Node(TEST);
         lineNumber = currentToken->lineNumber;
         testNode->lineNumber = lineNumber;
@@ -206,7 +212,7 @@ Node *Parser::parseRepeatStatement()
 
         testNode->adopt(parseExpression());
 
-        // The LOOP Node *adopts the TEST Node *as its final child.
+        // The LOOP node adopts the TEST node as its final child.
         loopNode->adopt(testNode);
     }
     else syntaxError("Expecting UNTIL");
@@ -241,11 +247,115 @@ Node *Parser::parseWhileStatement()
     return loopNode;
 }
 
+Node *Parser::parseIfStatement()
+{
+    // The current token should now be IF.
+	Node *ifNode = new Node(LOOP);
+	currentToken = scanner->nextToken();  // consume IF
+
+
+	//Parse the expression.
+	// The IF node adopts the expression subtree as its first child.
+	ifNode->adopt(parseExpression());
+
+	//Find the THEN
+	if (currentToken->type == THEN) {
+		currentToken = scanner->nextToken(); //consume THEN
+	}
+	else
+		syntaxError("Expecting THEN");
+
+	printf("finish THEN now: '%s' \n", currentToken->text.c_str());
+
+	//parse the THEN statement
+	//IF node adopts the statement as the second child
+	ifNode->adopt(parseExpression());
+	currentToken = scanner->nextToken();  // consume
+	printf("finish adding child now: '%s' \n", currentToken->text.c_str());
+
+	//Look for else
+	if (currentToken->type == ELSE) {
+		currentToken = scanner->nextToken(); //consume ELSE
+
+		//Parse the else Statement
+		//IF node adopts the statement as the third child
+		ifNode->adopt(parseExpression());
+	}
+
+
+	return ifNode;
+}
+Node *Parser::parseCaseStatement()
+{
+    // The current token should now be CASE
+
+    // Create LOOP, TEST, and NOT nodes.
+
+//    Node *not_node = new Node (NOT);
+	Node *case_node = new Node (LOOP);
+    lineNumber = currentToken->lineNumber;
+    case_node->lineNumber = lineNumber;
+
+	currentToken = scanner->nextToken();  // consume the CASE
+    
+
+    // The TEST node adopts the expression of case as its first child
+    case_node->adopt(parseExpression());
+
+
+    //Find the Case option
+    if (currentToken->type == OF){
+        currentToken = scanner->nextToken();  // consume the OF
+    }
+    else {
+        syntaxError("Expecting OF");
+    }
+    //starts looping through each case line until case is finished
+    while (currentToken->type != END){
+        //check to make sure it starts with a case label
+        if (currentToken->type == COLON){
+            //missing case label error
+            syntaxError("Expecting case before :");
+        }
+        else if (currentToken->type != SEMICOLON){
+            //create a child with the case label
+            case_node->adopt(parseExpression());
+        }
+        else {
+            syntaxError("missing case expression");
+        }
+        //Find the :
+        if (currentToken->type == COLON){
+            currentToken = scanner->nextToken();  // consume the :
+
+        }
+        else {
+            //missiong : after case label
+            syntaxError("Expecting :");
+        }
+        if (currentToken->type != SEMICOLON){
+            //create a child with the case expression
+            case_node->adopt(parseExpression());
+        }
+        else {
+            syntaxError("Missing case expression");
+        }
+        if (currentToken->type == SEMICOLON){
+            currentToken = scanner->nextToken();  // consume the ;
+        }
+        else {
+            syntaxError("Expected ;");
+        }
+    }
+
+    return case_node;
+}
+
 Node *Parser::parseWriteStatement()
 {
     // The current token should now be WRITE.
 
-    // Create a WRITE node-> It adopts the variable or string node->
+    // Create a WRITE node-> It adopts the variable or string node.
     Node *writeNode = new Node(NodeType::WRITE);
     currentToken = scanner->nextToken();  // consume WRITE
 
@@ -262,7 +372,7 @@ Node *Parser::parseWritelnStatement()
 {
     // The current token should now be WRITELN.
 
-    // Create a WRITELN node-> It adopts the variable or string node->
+    // Create a WRITELN node. It adopts the variable or string node.
     Node *writelnNode = new Node(NodeType::WRITELN);
     currentToken = scanner->nextToken();  // consume WRITELN
 
@@ -287,7 +397,8 @@ void Parser::parseWriteArguments(Node *node)
         node->adopt(parseVariable());
         hasArgument = true;
     }
-    else if (currentToken->type == STRING)
+    else if (   (currentToken->type == CHARACTER)
+             || (currentToken->type == STRING))
     {
         node->adopt(parseStringConstant());
         hasArgument = true;
@@ -346,9 +457,9 @@ Node *Parser::parseExpression()
 
         currentToken = scanner->nextToken();  // consume relational operator
 
-        // The relational operator Node *adopts the first simple expression
-        // Node *as its first child and the second simple expression node
-        // as its second child. Then it becomes the expression's root node->
+        // The relational operator node adopts the first simple expression
+        // node as its first child and the second simple expression node
+        // as its second child. Then it becomes the expression's root node.
         if (opNode != nullptr)
         {
             opNode->adopt(exprNode);
@@ -377,9 +488,9 @@ Node *Parser::parseSimpleExpression()
 
         currentToken = scanner->nextToken();  // consume the operator
 
-        // The add or subtract Node *adopts the first term Node *as its
-        // first child and the next term Node *as its second child.
-        // Then it becomes the simple expression's root node->
+        // The add or subtract node adopts the first term node as its
+        // first child and the next term node as its second child.
+        // Then it becomes the simple expression's root node.
         opNode->adopt(simpExprNode);
         opNode->adopt(parseTerm());
         simpExprNode = opNode;
@@ -395,7 +506,7 @@ Node *Parser::parseTerm()
     // The term's root node->
     Node *termNode = parseFactor();
 
-    // Keep parsing more factor as long as the current token
+    // Keep parsing more factors as long as the current token
     // is a * or / operator.
     while (termOperators.find(currentToken->type) != termOperators.end())
     {
@@ -404,9 +515,9 @@ Node *Parser::parseTerm()
 
         currentToken = scanner->nextToken();  // consume the operator
 
-        // The multiply or dive Node *adopts the first factor Node *as its
-        // as its first child and the next factor Node *as its second child.
-        // Then it becomes the term's root node->
+        // The multiply or divide node adopts the first factor node as its
+        // as its first child and the next factor node as its second child.
+        // Then it becomes the term's root node.
         opNode->adopt(termNode);
         opNode->adopt(parseFactor());
         termNode = opNode;
@@ -445,13 +556,14 @@ Node *Parser::parseVariable()
 {
     // The current token should now be an identifier.
 
+    // Has the variable been "declared"?
     string variableName = currentToken->text;
     SymtabEntry *variableId = symtab->lookup(toLowerCase(variableName));
-
     if (variableId == nullptr) semanticError("Undeclared identifier");
 
-    Node *node = new Node(VARIABLE);
-    node->text = variableName;
+    Node *node  = new Node(VARIABLE);
+    node->text  = variableName;
+    node->entry = variableId;
 
     currentToken = scanner->nextToken();  // consume the identifier
     return node;
@@ -496,9 +608,11 @@ void Parser::syntaxError(string message)
            lineNumber, message.c_str(), currentToken->text.c_str());
     errorCount++;
 
-    printf("recovery attempt");
+    //ADDED IN - need ed linke 517  in order for it not to be a infinite loop
+    currentToken = scanner->nextToken();
     // Recover by skipping the rest of the statement.
     // Skip to a statement follower token.
+//    printf("recovery attempt \n");
     while (statementFollowers.find(currentToken->type) ==
                                                     statementFollowers.end())
     {

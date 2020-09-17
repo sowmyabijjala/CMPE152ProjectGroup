@@ -1,0 +1,2 @@
+project:main.o src/simple.cpp frontend/Parser.cpp frontend/Token.cpp backend/Executor.cpp ParseTreePrinter.cpp
+	g++ -std=c++11 -o main.o src/simple.cpp src/frontend/Parser.cpp src/frontend/Token.cpp src/backend/Executor.cpp src/intermediate/ParseTreePrinter.cpp
