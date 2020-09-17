@@ -50,8 +50,8 @@ void Parser::initialize() {
 	termOperators.insert(STAR);
 	termOperators.insert(SLASH);
 
-	factorOperators.insert(TokenType::NOT);
-	factorOperators.insert(TokenType::IF);
+//	factorOperators.insert(TokenType::NOT);
+//	factorOperators.insert(TokenType::IF);
 }
 
 Node *Parser::parseProgram() {
@@ -240,30 +240,38 @@ Node *Parser::parseRepeatStatement() {
 }
 
 Node *Parser::parseWhileStatement() {
-	// The current token should now be WHILE.
+	cout << "parse while statement" << endl;
+		// Current token should be WHILE
 
-	// Create a LOOP node->
-	Node *loopNode = new Node(LOOP);
-	currentToken = scanner->nextToken(); // consume WHILE
+		// Create LOOP node
+		Node *loopNode = new Node(LOOP);
+		currentToken = scanner->nextToken();  // consume WHILE
 
-	Node *testNode = new Node(TEST);
-	Node *notNode = new Node(NodeType::NOT);
+		// Create TEST node
+		Node *testNode = new Node(TEST);
+		lineNumber = currentToken->lineNumber;
+		testNode->lineNumber = lineNumber;
 
-	notNode->adopt(parseExpression());
-	testNode->adopt(notNode);
-	loopNode->adopt(testNode);
+		Node *notNode = new Node(NodeType::NOT);
 
-	//missing some line # stuff still
+		// no need to consume since WHILE is already consumed
+		testNode->adopt(notNode);
+		notNode->adopt(parseExpression());
+		loopNode->adopt(testNode);
+		// LOOP node adopts TEST node as first child
+		// TEST node adopts NOT node as child
 
-	if (currentToken->type == DO) {
-		currentToken = scanner->nextToken(); //consume DO?
-		loopNode->adopt(parseStatement());
-	} else
-		syntaxError("Expecting DO");
+		if (currentToken->type == DO)
+		{
+			currentToken = scanner->nextToken(); // consume DO
+			loopNode->adopt(parseCompoundStatement());
+		}
+		else
+		{
+			syntaxError("Expecting DO");
+		}
 
-	//the last line before end of the DO statement does not need a ;
-
-	return loopNode;
+		return loopNode;
 }
 
 Node *Parser::parseForStatement() {
