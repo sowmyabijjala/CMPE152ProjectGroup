@@ -31,7 +31,6 @@ void Parser::initialize()
     statementStarters.insert(WHILE);
     statementStarters.insert(DO);
     statementStarters.insert(IF);
-    statementStarters.insert(TokenType::IF);
     statementStarters.insert(TokenType::WRITE);
     statementStarters.insert(TokenType::WRITELN);
 
@@ -43,6 +42,7 @@ void Parser::initialize()
 
     relationalOperators.insert(EQUALS);
     relationalOperators.insert(LESS_THAN);
+    relationalOperators.insert(GREATER_THAN);
 
     simpleExpressionOperators.insert(PLUS);
     simpleExpressionOperators.insert(MINUS);
@@ -51,6 +51,7 @@ void Parser::initialize()
     termOperators.insert(SLASH);
 
     factorOperators.insert(TokenType::NOT);
+    factorOperators.insert(TokenType::IF);
 }
 
 Node *Parser::parseProgram()
@@ -247,7 +248,7 @@ Node *Parser::parseWhileStatement()
 Node *Parser::parseIfStatement()
 {
     // The current token should now be IF.
-	Node *ifNode = new Node(IF);
+	Node *ifNode = new Node(LOOP);
 	currentToken = scanner->nextToken();  // consume IF
 
 
@@ -262,10 +263,13 @@ Node *Parser::parseIfStatement()
 	else
 		syntaxError("Expecting THEN");
 
+	printf("finish THEN now: '%s' \n", currentToken->text.c_str());
+
 	//parse the THEN statement
 	//IF node adopts the statement as the second child
 	ifNode->adopt(parseExpression());
 	currentToken = scanner->nextToken();  // consume
+	printf("finish adding child now: '%s' \n", currentToken->text.c_str());
 
 	//Look for else
 	if (currentToken->type == ELSE) {
@@ -542,7 +546,7 @@ void Parser::syntaxError(string message)
     currentToken = scanner->nextToken();
     // Recover by skipping the rest of the statement.
     // Skip to a statement follower token.
-    printf("recovery attempt");
+//    printf("recovery attempt \n");
     while (statementFollowers.find(currentToken->type) ==
                                                     statementFollowers.end())
     {

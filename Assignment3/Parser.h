@@ -34,6 +34,7 @@ private:
     static set<TokenType> relationalOperators;        // relational operators
     static set<TokenType> simpleExpressionOperators;  // simple expression operators
     static set<TokenType> termOperators;              // term operators
+    static set<TokenType> factorOperators;			  // factor operators (but this is just NOT)
 
 public:
     /**
@@ -55,6 +56,7 @@ private:
     Node *parseCompoundStatement();
     Node *parseRepeatStatement();
     Node *parseWhileStatement();
+    Node *parseIfStatement();
     Node *parseWriteStatement();
     Node *parseWritelnStatement();
     Node *parseExpression();
