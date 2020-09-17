@@ -42,6 +42,7 @@ void Parser::initialize() {
 	relationalOperators.insert(EQUALS);
 	relationalOperators.insert(LESS_THAN);
 	relationalOperators.insert(GREATER_THAN);
+	relationalOperators.insert(LESS_EQUALS);
 
 	simpleExpressionOperators.insert(PLUS);
 	simpleExpressionOperators.insert(MINUS);
