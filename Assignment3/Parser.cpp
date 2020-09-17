@@ -31,6 +31,8 @@ void Parser::initialize()
     statementStarters.insert(WHILE);
     statementStarters.insert(DO);
     statementStarters.insert(IF);
+    statementStarters.insert(CASE);
+    statementStarters.insert(OF);
     statementStarters.insert(TokenType::WRITE);
     statementStarters.insert(TokenType::WRITELN);
 
@@ -283,7 +285,72 @@ Node *Parser::parseIfStatement()
 
 	return ifNode;
 }
+Node *Parser::parseCaseStatement()
+{
+    // The current token should now be CASE
 
+    // Create LOOP, TEST, and NOT nodes.
+    Node *selectNode = new Node(SELECT);
+
+//    Node *not_node = new Node (NOT);
+	Node *case_node = new Node (LOOP);
+    lineNumber = currentToken->lineNumber;
+    case_node->lineNumber = lineNumber;
+
+	currentToken = scanner->nextToken();  // consume the CASE
+    
+
+    // The TEST node adopts the expression of case as its first child
+    case_node->adopt(parseExpression());
+
+
+    //Find the Case option
+    if (currentToken->type == OF){
+        currentToken = scanner->nextToken();  // consume the OF
+    }
+    else {
+        syntaxError("Expecting OF");
+    }
+    //starts looping through each case line until case is finished
+    while (currentToken->type != END){
+        //check to make sure it starts with a case label
+        if (currentTOken->type == :)[
+            //missing case label error
+            syntaxError("Expecting case before :");
+        ]
+        else if (currentTOken->type != ;){
+            //create a child with the case label
+            case_node->adopt(parseExpression());
+        }
+        else {
+            syntaxError("missing case expression");
+        }
+        //Find the :
+        if (currentTOken->type == :)[
+            currentToken = scanner->nextToken();  // consume the :
+
+        ]
+        else {
+            //missiong : after case label
+            syntaxError("Expecting :");
+        }
+        if (currentTOken->type != ;){
+            //create a child with the case expression
+            case_node->adopt(parseExpression());
+        }
+        else {
+            syntaxError("Missing case expression");
+        }
+        if (currentTOken->type == ;){
+            currentToken = scanner->nextToken();  // consume the ;
+        }
+        else {
+            syntaxError("Expected ;");
+        }
+    }
+
+    return case_node;
+}
 
 Node *Parser::parseWriteStatement()
 {
