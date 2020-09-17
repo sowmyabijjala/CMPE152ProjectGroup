@@ -319,7 +319,9 @@ Node *Parser::parseCaseStatement()
         }
         else if (currentToken->type != SEMICOLON){
             //create a child with the case label
-            case_node->adopt(parseExpression());
+            while(currentToken->type != COLON){
+                case_node->adopt(parseExpression());
+            }
         }
         else {
             syntaxError("missing case expression");
@@ -335,7 +337,9 @@ Node *Parser::parseCaseStatement()
         }
         if (currentToken->type != SEMICOLON){
             //create a child with the case expression
-            case_node->adopt(parseExpression());
+            while (currentToken->type != SEMICOLON){
+                case_node->adopt(parseExpression());
+            }
         }
         else {
             syntaxError("Missing case expression");
