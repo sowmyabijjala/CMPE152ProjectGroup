@@ -147,6 +147,8 @@ Node *Parser::parseAssignmentStatement()
     Node *rhsNode = parseExpression();
     assignmentNode->adopt(rhsNode);
 
+    //for(int i=0; i < assignmentNode->children.size(); i++)
+
     return assignmentNode;
 }
 
@@ -171,6 +173,9 @@ Node *Parser::parseForAssignmentStatement(string var)
     Node *rhsNode = parseExpression();
     assignmentNode->adopt(rhsNode);
 
+
+    //for(int i=0; i < assignmentNode->children.size(); i++)
+    	   //printf("in for Size '%d' and text '%s'", assignmentNode->children.size(),assignmentNode->children.at(i)->text.c_str());
     return assignmentNode;
 }
 
@@ -279,8 +284,15 @@ Node *Parser::parseForStatement()
 	Node *forNode = new Node(NodeType::FOR);
 	currentToken = scanner->nextToken(); // consume FOR
 
+	printf("finish FOR now: '%s' \n", currentToken->text.c_str());
+
+	//FOR NODE currently has ASSIGN
 	forNode->adopt(parseAssignmentStatement()); //assignment statement
+	printf("finish assignment now: '%s' \n", currentToken->text.c_str());
+
 	Node *tempNode = forNode->children[0]; //should technically carry the variable assignment
+    tempNode = tempNode->children[0];
+
 	Node *loopNode = new Node(LOOP);
 
 	if (currentToken->type == TO)
@@ -289,8 +301,11 @@ Node *Parser::parseForStatement()
 		currentToken = scanner->nextToken(); //consume TO
 		Node *testNode = new Node(TEST);
 		Node *opNode =  new Node(GT);
+		opNode->adopt(parseForAssignmentStatement(tempNode->text)); // add assignment statement
 		testNode->adopt(opNode);//add GT to parse tree for TO
-		testNode->adopt(parseForAssignmentStatement(tempNode->text)); // add assignment statement
+		printf("temp node's string TO '%s' \n", tempNode->text.c_str());
+
+		//LOOP NODE currently has TEST
 		loopNode->adopt(testNode);
 
 	}
@@ -302,14 +317,19 @@ Node *Parser::parseForStatement()
 		Node *opNode =  new Node(LT);
 		testNode->adopt(opNode);//add GT to parse tree for TO
 		testNode->adopt(parseForAssignmentStatement(tempNode->text)); // add assignment statement
+
+		//LOOP NODE currently has TEST
 		loopNode->adopt(testNode);
 	}
 	else syntaxError("Expecting TO or DOWNTO");
 
 	//current token should be DO
+	printf("Should be DO: '%s' \n", currentToken->text.c_str());
 	if (currentToken->type == DO) {
 			currentToken = scanner->nextToken(); //consume DO
-			loopNode->adopt(parseStatement()); //adopt assign into tree
+
+			//LOOP NODE currently has TEST and ASSIGN
+			loopNode->adopt(parseStatement());
 		}
 		else
 			syntaxError("Expecting DO");
@@ -328,6 +348,12 @@ Node *Parser::parseForStatement()
 	optoNode->adopt(integerNode);
 
 	assignmentNode->adopt(optoNode);
+
+	//LOOP NODE currently has TEST, ASSIGN and ASSIGN
+	loopNode->adopt(assignmentNode);
+
+	//FOR NODE currently has ASSIGN AND LOOP
+	forNode->adopt(loopNode); //assignment statement
 
     return forNode;
 }
@@ -588,7 +614,7 @@ void Parser::syntaxError(string message)
     errorCount++;
 
     currentToken = scanner->nextToken();
-    printf("recovery attempt");
+    //printf("recovery attempt");
     // Recover by skipping the rest of the statement.
     // Skip to a statement follower token.
     while (statementFollowers.find(currentToken->type) ==
