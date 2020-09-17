@@ -116,6 +116,12 @@ Node *Parser::parseStatement() {
 	case WRITELN:
 		stmtNode = parseWritelnStatement();
 		break;
+	case FOR:
+		stmtNode = parseForStatement();
+		break;
+	case CASE:
+		stmtNode = parseCaseStatement();
+		break;
 	case SEMICOLON:
 		stmtNode = nullptr;
 		break;  // empty statement
@@ -182,13 +188,25 @@ void Parser::parseStatementList(Node *parentNode, TokenType terminalType) {
 		Node *stmtNode = parseStatement();
 		if (stmtNode != nullptr)
 			parentNode->adopt(stmtNode);
-
 		// A semicolon separates statements.
 		if (currentToken->type == SEMICOLON) {
 			while (currentToken->type == SEMICOLON) {
 				currentToken = scanner->nextToken();  // consume ;
 			}
-		} else if (statementStarters.find(currentToken->type)
+		}
+//		else if(scanner->nextToken() == END ){
+//			//theres no issue
+//			//should not exect a ; before an END
+//			printf("End of the line before END");
+//		}
+		//TODO
+		else if(parentNode->type == LOOP ){
+			//theres no issue
+			//should not exect a ; before an END
+			printf("End of the line before END");
+		}
+
+		else if (statementStarters.find(currentToken->type)
 				!= statementStarters.end()) {
 			syntaxError("Missing ;");
 		}
@@ -242,6 +260,8 @@ Node *Parser::parseWhileStatement() {
 		loopNode->adopt(parseStatement());
 	} else
 		syntaxError("Expecting DO");
+
+	//the last line before end of the DO statement does not need a ;
 
 	return loopNode;
 }
