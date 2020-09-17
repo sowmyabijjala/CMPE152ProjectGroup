@@ -380,11 +380,11 @@ Node *Parser::parseCaseStatement()
     //starts looping through each case line until case is finished
     while (currentToken->type != END){
         //check to make sure it starts with a case label
-        if (currentToken->type == :)[
+        if (currentToken->type == COLON){
             //missing case label error
             syntaxError("Expecting case before :");
-        ]
-        else if (currentTOken->type != ;){
+        }
+        else if (currentToken->type != SEMICOLON){
             //create a child with the case label
             case_node->adopt(parseExpression());
         }
@@ -392,23 +392,22 @@ Node *Parser::parseCaseStatement()
             syntaxError("missing case expression");
         }
         //Find the :
-        if (currentTOken->type == :)[
-            currentToken = scanner->nextToken();  // consume the :
-
-        ]
+        if (currentToken->type == COLON){
+                currentToken = scanner->nextToken();   // consume the :
+        }
         else {
-            //missiong : after case label
+            //missing : after case label
             syntaxError("Expecting :");
         }
-        if (currentTOken->type != ;){
+        if (currentToken->type != SEMICOLON){
             //create a child with the case expression
             case_node->adopt(parseExpression());
         }
         else {
             syntaxError("Missing case expression");
         }
-        if (currentTOken->type == ;){
-            currentToken = scanner->nextToken();  // consume the ;
+        if (currentToken->type == SEMICOLON){
+        	currentToken = scanner->nextToken();  // consume the ;
         }
         else {
             syntaxError("Expected ;");
