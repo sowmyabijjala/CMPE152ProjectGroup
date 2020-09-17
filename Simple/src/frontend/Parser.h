@@ -58,6 +58,8 @@ private:
     Node *parseWhileStatement();
     Node *parseIfStatement();
     Node *parseForStatement();
+    Node *parseCaseStatement();
+
     Node *parseWriteStatement();
     Node *parseWritelnStatement();
     Node *parseExpression();
