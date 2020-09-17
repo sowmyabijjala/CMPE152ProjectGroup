@@ -299,8 +299,10 @@ Node *Parser::parseCaseStatement()
 	currentToken = scanner->nextToken();  // consume the CASE
     
 
-    // The TEST node adopts the expression of case as its first child
-    case_node->adopt(parseExpression());
+    // The TEST node adopts the case expression as its first child
+    while (currentToken->type != OF){
+        case_node->adopt(parseExpression());
+    }
 
 
     //Find the Case option
