@@ -10,6 +10,10 @@ declarations  : ;
 statement : compoundStatement
           | assignmentStatement
           | repeatStatement
+          | whileStatement
+          | forStatement
+          | ifStatement
+          | caseStatement
           | writeStatement
           | writelnStatement
           | emptyStatement
@@ -58,7 +62,7 @@ realConstant    : REAL;
 
 characterConstant : CHARACTER ;
 stringConstant    : STRING ;
-constant          : ((('-' | '+') (IDENTIFIER | number ) )| STRING);
+constant          : ((('-' | '+')  (IDENTIFIER | INTEGER ) )| STRING);
 constantList      : constant ( ',' constant )* ;
 
 sign : '-' | '+' ;
