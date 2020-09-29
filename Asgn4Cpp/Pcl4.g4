@@ -24,8 +24,7 @@ repeatStatement     : REPEAT statementList UNTIL expression ;
 whileStatement      : WHILE expression DO statementList;
 forStatement        : FOR assignmentStatement (TO|DOWNTO) integerConstant DO statementList;
 ifStatement         : IF expression THEN statementList (ELSE statementList)? ;
-caseStatement       : CASE expression OF statementList;
-
+caseStatement       : CASE expression OF (constantList ':' statement (';' constantList ':' statement)*)* END;
 lhs : variable ;
 rhs : expression ;
 
@@ -60,7 +59,7 @@ realConstant    : REAL;
 characterConstant : CHARACTER ;
 stringConstant    : STRING ;
 constant          : ((('-' | '+') (IDENTIFIER | number ) )| STRING);
-constantList      : constant | ',' ;
+constantList      : constant ( ',' constant )* ;
 
 sign : '-' | '+' ;
        
