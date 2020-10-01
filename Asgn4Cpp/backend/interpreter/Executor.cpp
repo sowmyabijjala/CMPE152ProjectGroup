@@ -2,10 +2,13 @@
 
 #include "Object.h"
 #include "Executor.h"
+#include "Symtab.h"
+#include "SymtabEntry.h"
 
 namespace backend { namespace interpreter {
 
 using namespace std;
+using namespace intermediate::symtab;
 
 Object Executor::visitProgram(Pcl4Parser::ProgramContext *ctx)
 {
@@ -66,35 +69,102 @@ Object Executor::visitRepeatStatement(Pcl4Parser::RepeatStatementContext *ctx)
     } while(!value);
 
 }
-/*
-Object Executor::visitCaseStatement(Pcl4Parser::CaseStatementContext *ctx) {
-    Pcl4Parser::CaseBranchListContext *branchListCtx = ctx->caseBranchList();
-    for(Pcl4Parser::CaseBranchContext *branchCtx : branchListCtx->caseBranch()) {
+
+Object Executor::visitForStatement(Pcl4Parser::ForStatementContext *ctx) {
+	//forStatement        : FOR variable ':=' expression (TO|DOWNTO) expression DO statement;
+
+    Pcl4Parser::VariableContext *listCtx = ctx->variable(); //i
+	Pcl4Parser::ExpressionContext *ctx1 = ctx->expression(0);
+
+    int start = stoi(ctx1->getText());
+    cout << "Will assign value " << start;
+
+
+    Pcl4Parser::ExpressionContext *simpleCtx = ctx->expression(0); //= 5?
+    int end = stoi(simpleCtx->getText());
+    cout << "Will assign value " << end;
+
+    if(ctx->TO()->getText() == "TO")
+    {
+    	for(int i = start; i < end; i++)
+    	{
+    		Pcl4Parser::StatementContext *stmtCtx = ctx->statement();
+    		visit(stmtCtx);
+    	}
+    }
+    else if(ctx->DOWNTO()->getText()=="DOWNTO")
+    {
+    	for(int i = start; i < end; i--)
+    	{
+    	    Pcl4Parser::StatementContext *stmtCtx = ctx->statement();
+    	    visit(stmtCtx);
+    	}
+    }
+
+    return nullptr;
+
+    /*
+    int integerStart = visit(ctx->assignmentStatement()).value.as<int>();
+    string type = visit(ctx->expression()).as<string>();
+    if (type == "DO"){
+    	int integerConstant = visit(ctx->expression()).as<int>();
+    	for (int i =integerStart; i < integerConstant; i++){
+    		//code
+    		Pcl4Parser::assignmentStatement *listCtx = ctx->assignmentStatement();
+    	}
+
+    }
+    else if (type == "DOWNTO"){
+    	int integerConstant = visit(ctx->expression()).as<int>();
+    	for (int i =integerStart; i < integerConstatn; i++){
+    		//code
+    		Pcl4Parser::assignmentStatement *listCtx = ctx->assignmentStatement();
+    	}
+    }
+    */
+
+    return nullptr;
+}
+
+Object Executor::visitCaseStatement(Pcl4Parser::CaseStatementContext *ctx)
+{
+    bool foundMatch = false;
+    long caseValue = (long) stod(visit(ctx->expression()).as<string>());
+
+    Pcl4Parser::CaseBranchListContext *branchlistCtx = ctx->caseBranchList();
+    for (Pcl4Parser::CaseBranchContext *branchCtx : branchlistCtx->caseBranch())
+    {
         Pcl4Parser::CaseConstantListContext *constListCtx = branchCtx->caseConstantList();
 
-        for(Pcl4Parser::CaseConstantContext *caseConstCtx : constListCtx->caseConstant()) {
-            //if sign is there and is -, it's negative
-            bool negative = (caseConstCtx->sign() != nullptr) && (caseConstCtx->sign()->getText() == "-");
-            if(negative) {
-                constValue *= -1;
+        for (Pcl4Parser::CaseConstantContext *caseConstCtx : constListCtx->caseConstant())
+        {
+            bool negate = (caseConstCtx->sign() != nullptr) && (caseConstCtx->sign()->getText() == "-");
+            long constValue = (long) stod(visit(caseConstCtx->unsignedNumber()).as<string>());
+            if (negate)
+            {
+                constValue = -constValue;
             }
 
-            if(caseValue = constValue) {
+            if (caseValue == constValue)
+            {
                 visit(branchCtx->statement());
-                foundMatch=true;
+                foundMatch = true;
                 break;
             }
         }
-        if(foundMatch)
+
+        if (foundMatch)
+        {
             break;
+        }
     }
     return nullptr;
 }
-*/
+
 
 
 Object Executor::visitWhileStatement(Pcl4Parser::WhileStatementContext *ctx) {
-    Pcl4Parser::StatementListContext *stmtCtx = ctx->statementList();
+    Pcl4Parser::StatementContext *stmtCtx = ctx->statement();
     bool value = visit(ctx->expression()).as<string>() == "T";
     while (value) {
         visit(stmtCtx);
@@ -156,29 +226,27 @@ Object Executor::visitExpression(Pcl4Parser::ExpressionContext *ctx)
 
     return operand1; //occurs if the expr was just a simple expr
 }
-/*
+
 
 Object Executor::visitIfStatement(Pcl4Parser::IfStatementContext *ctx)
 {
-	//ifStatement: IF expression THEN statementList (ELSE statementList)? ;
+	//ifStatement: IF expression THEN true(ELSE false)? ;
 
-    string exprValue = visit(ctx->expression()).as<string>();
-    bool value = false;
-    value = (exprValue=="T");
-    if(value)
-    {
-    	Pcl4Parser::StatementListContext *listCtx = ctx->statementList();
-    	visit(listCtx);
-    }
-    else
-    {
-    	//get statement list of ELSE
-    	Pcl4Parser::StatementListContext *listCtx2 = ctx->statementList();
-    	visit(listCtx2);
-    }
+	Pcl4Parser::ExpressionContext *ctx1 = ctx->expression();
+	Pcl4Parser::TruestatementContext *truectx = ctx->truestatement();
+	Pcl4Parser::FalsestatementContext *falsectx = ctx->falsestatement();
+
+	visit(ctx1);
+
+	visit(truectx);
+
+	if(falsectx != nullptr)
+		visit(falsectx);
+
+	return nullptr;
 
 }
-*/
+
 
 Object Executor::visitSimpleExpression(Pcl4Parser::SimpleExpressionContext *ctx) {
     //number of terms
@@ -222,8 +290,8 @@ Object Executor::visitSimpleExpression(Pcl4Parser::SimpleExpressionContext *ctx)
     }
     return operand1;
 }
-/*
 
+/*
 Object Executor::visitTerm(Pcl4Parser::TermContext *ctx) {
     //number of factors
     int count = ctx->factor().size();
@@ -264,22 +332,19 @@ Object Executor::visitTerm(Pcl4Parser::TermContext *ctx) {
     return operand1;
 }
 */
-/*
+
+
 Object Executor::visitVariable(Pcl4Parser::VariableContext *ctx)
 {
-    /**cout << "Visiting variable ";
-    string variableName = ctx->getText();
-    cout << variableName << endl;
-    return nullptr;  // should return the variable's value!
+    cout << "Visiting variable ";
+        string variableName = ctx->getText();
+        cout << variableName << endl;
 
-    string varName = ctx->getText();
-    SymtabEntry *variableId = symtab.lookup(varName);
+    Object value = symtab[variableName];
 
-    if (variableId != nullptr)
-        return variableId->getValue();
-    return "";
+    return value;  // should return the variable's value!
 }
-*/
+
 
 
 Object Executor::visitNumber(Pcl4Parser::NumberContext *ctx)
