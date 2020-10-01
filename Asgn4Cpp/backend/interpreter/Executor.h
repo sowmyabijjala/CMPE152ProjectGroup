@@ -6,6 +6,8 @@
 
 #include "antlr4-runtime.h"
 #include "Pcl4BaseVisitor.h"
+#include "Symtab.h"
+#include "SymtabEntry.h"
 
 #include "Object.h"
 
@@ -14,6 +16,8 @@ namespace backend { namespace interpreter {
 using namespace std;
 
 typedef antlrcpp::Any Object;
+
+
 
 class Executor : public Pcl4BaseVisitor
 {
@@ -32,7 +36,7 @@ public:
     Object visitForStatement(Pcl4Parser::ForStatementContext *ctx) override;
     Object visitIfStatement(Pcl4Parser::IfStatementContext *ctx) override;
     Object visitSimpleExpression(Pcl4Parser::SimpleExpressionContext *ctx) override;
-    Object visitTerm(Pcl4Parser::TermContext *ctx) override;
+    //Object visitTerm(Pcl4Parser::TermContext *ctx) override;
     Object visitIntegerConstant(Pcl4Parser::IntegerConstantContext *ctx) override;
     Object visitRealConstant(Pcl4Parser::RealConstantContext *ctx) override;
     Object visitCharacterConstant(Pcl4Parser::CharacterConstantContext *ctx);
@@ -43,9 +47,12 @@ public:
     Object visitExpression(Pcl4Parser::ExpressionContext *ctx) override;
     Object visitVariable(Pcl4Parser::VariableContext *ctx) override;
     Object visitNumber(Pcl4Parser::NumberContext *ctx) override;
+   // Object visitParenthesizedExpression(Pcl4Parser::ParenthesizedExpressionContext *ctx) override;
 
     // Complete this class!
 
+private:
+    map<string,Object> symtab;
 };
 
 }}  // namespace backend::interpreter
