@@ -25,11 +25,20 @@ emptyStatement    : ;
 statementList       : statement ( ';' statement )* ;
 assignmentStatement : lhs ':=' rhs ;
 repeatStatement     : REPEAT statementList UNTIL expression ;
-whileStatement      : WHILE expression DO statementList;
-forStatement        : FOR assignmentStatement (TO|DOWNTO) integerConstant DO statementList;
-ifStatement         : IF expression THEN statementList (ELSE statementList)? ;
-caseStatement       : CASE expression OF (constantList ':' statement (';' constantList ':' statement)*)* END;lhs : variable ;
-rhs : expression ;
+whileStatement      : WHILE expression DO statement;
+forStatement        : FOR variable ':=' expression (TO|DOWNTO) expression DO statement;
+
+ifStatement         : IF expression THEN truestatement (ELSE falsestatement)? ;
+truestatement       : statement;
+falsestatement      : statement;
+
+caseStatement	    : CASE expression OF caseBranchList END ;
+caseBranchList      : caseBranch (';' caseBranch)* ;
+caseBranch		    : caseConstantList ':' statement | ;
+caseConstantList    : caseConstant (',' caseConstant)* ;
+caseConstant	    : sign?(IDENTIFIER | unsignedNumber)
+				    | characterConstant
+				    | stringConstant ;rhs : expression ;
 
 writeStatement   : WRITE writeArgumentsOn ;
 writelnStatement : WRITELN writeArgumentsLn? ;
@@ -53,6 +62,7 @@ factor
     ;
 
 variable : IDENTIFIER ;
+lhs      : variable;
      
 number          : sign? unsignedNumber ;
 unsignedNumber  : integerConstant | realConstant ;
