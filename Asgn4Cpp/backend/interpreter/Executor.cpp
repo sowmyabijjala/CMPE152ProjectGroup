@@ -68,12 +68,16 @@ Object Executor::visitRepeatStatement(Pcl4Parser::RepeatStatementContext *ctx)
         value = (exprValue=="T");
     } while(!value);
 
+    return nullptr;
+
 }
 
 Object Executor::visitForStatement(Pcl4Parser::ForStatementContext *ctx) {
 	//forStatement        : FOR variable ':=' expression (TO|DOWNTO) expression DO statement;
 
-    Pcl4Parser::VariableContext *listCtx = ctx->variable(); //i
+	cout << "Visiting for statement" << endl;
+
+    //Pcl4Parser::VariableContext *listCtx = ctx->variable(); //i
 	Pcl4Parser::ExpressionContext *ctx1 = ctx->expression(0);
 
     int start = stoi(ctx1->getText());
@@ -103,32 +107,13 @@ Object Executor::visitForStatement(Pcl4Parser::ForStatementContext *ctx) {
 
     return nullptr;
 
-    /*
-    int integerStart = visit(ctx->assignmentStatement()).value.as<int>();
-    string type = visit(ctx->expression()).as<string>();
-    if (type == "DO"){
-    	int integerConstant = visit(ctx->expression()).as<int>();
-    	for (int i =integerStart; i < integerConstant; i++){
-    		//code
-    		Pcl4Parser::assignmentStatement *listCtx = ctx->assignmentStatement();
-    	}
-
-    }
-    else if (type == "DOWNTO"){
-    	int integerConstant = visit(ctx->expression()).as<int>();
-    	for (int i =integerStart; i < integerConstatn; i++){
-    		//code
-    		Pcl4Parser::assignmentStatement *listCtx = ctx->assignmentStatement();
-    	}
-    }
-    */
-
-    return nullptr;
 }
 
 Object Executor::visitCaseStatement(Pcl4Parser::CaseStatementContext *ctx)
 {
-    bool foundMatch = false;
+	cout << "Visiting case statement" << endl;
+
+    bool match = false;
     long caseValue = (long) stod(visit(ctx->expression()).as<string>());
 
     Pcl4Parser::CaseBranchListContext *branchlistCtx = ctx->caseBranchList();
@@ -148,12 +133,12 @@ Object Executor::visitCaseStatement(Pcl4Parser::CaseStatementContext *ctx)
             if (caseValue == constValue)
             {
                 visit(branchCtx->statement());
-                foundMatch = true;
+                match = true;
                 break;
             }
         }
 
-        if (foundMatch)
+        if (match)
         {
             break;
         }
@@ -164,6 +149,9 @@ Object Executor::visitCaseStatement(Pcl4Parser::CaseStatementContext *ctx)
 
 
 Object Executor::visitWhileStatement(Pcl4Parser::WhileStatementContext *ctx) {
+
+	cout << "Visiting while statement" << endl;
+
     Pcl4Parser::StatementContext *stmtCtx = ctx->statement();
     bool value = visit(ctx->expression()).as<string>() == "T";
     while (value) {
@@ -191,6 +179,8 @@ Object Executor::visitWritelnStatement(Pcl4Parser::WritelnStatementContext *ctx)
 
 Object Executor::visitExpression(Pcl4Parser::ExpressionContext *ctx)
 {
+	cout << "Visiting expression statement" << endl;
+
     Pcl4Parser::SimpleExpressionContext *simpleCtx1 = ctx->simpleExpression(0);
     Pcl4Parser::RelOpContext *relOpCtx = ctx->relOp();
     string operand1 = visit(simpleCtx1).as<string>();
@@ -232,6 +222,9 @@ Object Executor::visitIfStatement(Pcl4Parser::IfStatementContext *ctx)
 {
 	//ifStatement: IF expression THEN true(ELSE false)? ;
 
+	cout << "Visiting if statement" << endl;
+
+
 	Pcl4Parser::ExpressionContext *ctx1 = ctx->expression();
 	Pcl4Parser::TruestatementContext *truectx = ctx->truestatement();
 	Pcl4Parser::FalsestatementContext *falsectx = ctx->falsestatement();
@@ -249,6 +242,9 @@ Object Executor::visitIfStatement(Pcl4Parser::IfStatementContext *ctx)
 
 
 Object Executor::visitSimpleExpression(Pcl4Parser::SimpleExpressionContext *ctx) {
+
+	cout << "Visiting simple expression statement" << endl;
+
     //number of terms
     int count = ctx->term().size();
 
@@ -291,7 +287,7 @@ Object Executor::visitSimpleExpression(Pcl4Parser::SimpleExpressionContext *ctx)
     return operand1;
 }
 
-/*
+
 Object Executor::visitTerm(Pcl4Parser::TermContext *ctx) {
     //number of factors
     int count = ctx->factor().size();
@@ -302,11 +298,11 @@ Object Executor::visitTerm(Pcl4Parser::TermContext *ctx) {
     for(int i=1; i<count; i++) {
         string op = toLowerCase(ctx->mulOp(i-1)->getText());
         Pcl4Parser::FactorContext *factorCtx2 = ctx->factor(i);
-        string operand2 == visit(factorCtx2).as<string>();
+        string operand2 = visit(factorCtx2).as<string>();
 
         //remember that possible operators are only AND, *, / DIV, MOD
         if( (operand2=="T")||(operand2=="F") ) { //if opd2 is a bool
-            if( (operand1=="T") && (operand2="T") ) //AND op1 and op2
+            if( (operand1=="T") && (operand2=="T") ) //AND op1 and op2
                 operand1 = string("T");
             else
                 operand1 = string("F");
@@ -325,13 +321,13 @@ Object Executor::visitTerm(Pcl4Parser::TermContext *ctx) {
                 operand1 = to_string( trunc(val1/val2) );
             }
             else if(op=="mod") {
-                operand1 = to_string ( val1%val2 );
+                operand1 = to_string (int(val1) % int(val2));
             }
         }
     }
     return operand1;
 }
-*/
+
 
 
 Object Executor::visitVariable(Pcl4Parser::VariableContext *ctx)
