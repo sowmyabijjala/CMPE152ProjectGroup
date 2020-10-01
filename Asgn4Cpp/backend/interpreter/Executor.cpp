@@ -54,6 +54,7 @@ Object Executor::visitRepeatStatement(Pcl4Parser::RepeatStatementContext *ctx)
 {
     /**cout << "Visiting REPEAT statement" << endl;
     return visit(ctx->statementList());
+    repeatStatement     : REPEAT statementList UNTIL expression ;
     */
     Pcl4Parser::StatementListContext *listCtx = ctx->statementList();
     bool value = false;
@@ -65,7 +66,7 @@ Object Executor::visitRepeatStatement(Pcl4Parser::RepeatStatementContext *ctx)
     } while(!value);
 
 }
-
+/*
 Object Executor::visitCaseStatement(Pcl4Parser::CaseStatementContext *ctx) {
     Pcl4Parser::CaseBranchListContext *branchListCtx = ctx->caseBranchList();
     for(Pcl4Parser::CaseBranchContext *branchCtx : branchListCtx->caseBranch()) {
@@ -85,13 +86,15 @@ Object Executor::visitCaseStatement(Pcl4Parser::CaseStatementContext *ctx) {
             }
         }
         if(foundMatch)
-            break; 
+            break;
     }
     return nullptr;
 }
+*/
+
 
 Object Executor::visitWhileStatement(Pcl4Parser::WhileStatementContext *ctx) {
-    Pcl4Parser::StatementContext *stmtCtx = ctx->statement();
+    Pcl4Parser::StatementListContext *stmtCtx = ctx->statementList();
     bool value = visit(ctx->expression()).as<string>() == "T";
     while (value) {
         visit(stmtCtx);
@@ -153,6 +156,29 @@ Object Executor::visitExpression(Pcl4Parser::ExpressionContext *ctx)
 
     return operand1; //occurs if the expr was just a simple expr
 }
+/*
+
+Object Executor::visitIfStatement(Pcl4Parser::IfStatementContext *ctx)
+{
+	//ifStatement: IF expression THEN statementList (ELSE statementList)? ;
+
+    string exprValue = visit(ctx->expression()).as<string>();
+    bool value = false;
+    value = (exprValue=="T");
+    if(value)
+    {
+    	Pcl4Parser::StatementListContext *listCtx = ctx->statementList();
+    	visit(listCtx);
+    }
+    else
+    {
+    	//get statement list of ELSE
+    	Pcl4Parser::StatementListContext *listCtx2 = ctx->statementList();
+    	visit(listCtx2);
+    }
+
+}
+*/
 
 Object Executor::visitSimpleExpression(Pcl4Parser::SimpleExpressionContext *ctx) {
     //number of terms
@@ -192,10 +218,11 @@ Object Executor::visitSimpleExpression(Pcl4Parser::SimpleExpressionContext *ctx)
             else {
                 operand1 = to_string(value1-value2);
             }
-        }  
+        }
     }
     return operand1;
 }
+/*
 
 Object Executor::visitTerm(Pcl4Parser::TermContext *ctx) {
     //number of factors
@@ -230,21 +257,21 @@ Object Executor::visitTerm(Pcl4Parser::TermContext *ctx) {
                 operand1 = to_string( trunc(val1/val2) );
             }
             else if(op=="mod") {
-                operand = to_string ( val1%val2 );
+                operand1 = to_string ( val1%val2 );
             }
         }
     }
     return operand1;
 }
-
+*/
+/*
 Object Executor::visitVariable(Pcl4Parser::VariableContext *ctx)
 {
     /**cout << "Visiting variable ";
     string variableName = ctx->getText();
     cout << variableName << endl;
-
     return nullptr;  // should return the variable's value!
-    */
+
     string varName = ctx->getText();
     SymtabEntry *variableId = symtab.lookup(varName);
 
@@ -252,6 +279,8 @@ Object Executor::visitVariable(Pcl4Parser::VariableContext *ctx)
         return variableId->getValue();
     return "";
 }
+*/
+
 
 Object Executor::visitNumber(Pcl4Parser::NumberContext *ctx)
 {
@@ -260,7 +289,6 @@ Object Executor::visitNumber(Pcl4Parser::NumberContext *ctx)
                                        ->INTEGER()->getText();
     int value = stoi(text);
     cout << value << endl;
-
     return value;
     */
     return visit(ctx->unsignedNumber());
@@ -268,7 +296,7 @@ Object Executor::visitNumber(Pcl4Parser::NumberContext *ctx)
 
 Object Executor::visitUnsignedNumber(Pcl4Parser::UnsignedNumberContext *ctx) {
     if(ctx->integerConstant() != nullptr)
-        return visit(ctx->integerConstant())
+        return visit(ctx->integerConstant());
     return visit(ctx->realConstant());
 }
 
