@@ -36,10 +36,10 @@ public:
     Object visitForStatement(Pcl4Parser::ForStatementContext *ctx) override;
     Object visitIfStatement(Pcl4Parser::IfStatementContext *ctx) override;
     Object visitSimpleExpression(Pcl4Parser::SimpleExpressionContext *ctx) override;
-    //Object visitTerm(Pcl4Parser::TermContext *ctx) override;
+    Object visitTerm(Pcl4Parser::TermContext *ctx) override;
     Object visitIntegerConstant(Pcl4Parser::IntegerConstantContext *ctx) override;
     Object visitRealConstant(Pcl4Parser::RealConstantContext *ctx) override;
-    Object visitCharacterConstant(Pcl4Parser::CharacterConstantContext *ctx);
+    Object visitCharacterConstant(Pcl4Parser::CharacterConstantContext *ctx) override;
     Object visitWriteStatement(Pcl4Parser::WriteStatementContext *ctx) override;
     Object visitUnsignedNumber(Pcl4Parser::UnsignedNumberContext *ctx) override;
     Object visitStringConstant(Pcl4Parser::StringConstantContext *ctx) override;
