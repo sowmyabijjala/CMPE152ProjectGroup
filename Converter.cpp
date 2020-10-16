@@ -460,6 +460,34 @@ Object Converter::visitForStatement(PascalParser::ForStatementContext *ctx)
 
 	return nullptr;
 }
+Object Converter::visitIfStatement(PascalParser::IfStatementContext *ctx)
+{
+	code.emit("if  (");
+	code.emit(visit(ctx->expression()).as<string>());
+	code.emit(") ");
+
+	visit(ctx->trueStatement());
+
+	code.emit("else ");
+
+	visit(ctx->falseStatement());
+
+	
+	return nullptr;
+}
+
+Object Converter::visitProcedureStatement(PascalParser::ProcedureCallStatementContext *ctx)
+{
+	string name = (visit(ctx->procedureName()));
+	code.emit(name);
+	code.emit("(");
+	//Parameters - argument lists
+	string param = (visit(ctx->argumentList()));
+	code.emit(")");
+	code.emit(";");
+
+	return nullptr;
+}
 Object Converter::visitExpression(PascalParser::ExpressionContext *ctx)
 {
     PascalParser::SimpleExpressionContext *simpleCtx1 =
