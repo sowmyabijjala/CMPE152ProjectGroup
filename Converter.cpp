@@ -433,7 +433,33 @@ Object Converter::visitWhileStatement(PascalParser::WhileStatementContext *ctx) 
 
 	return nullptr;
 }
+Object Converter::visitForStatement(PascalParser::ForStatementContext *ctx)
+{
+	code.emit("for(");
+	string var = (visit(ctx->variable())).as<string>();
+	code.emit(var);
+	code.emit("=");
+	code.emit(visit(ctx->expression(0)).as<string>());
+	code.emit(";");
+	code.emit(var);
 
+	bool to = ctx->TO() != nullptr;
+	if(to) code.emit("<");
+	else code.emit(">");
+	code.emit(visit(ctx->expression(1)).as<string>());
+	code.emit(";");
+
+	code.emit(var);
+	if(to) code.emit("++");
+	else code.emit("--");
+	code.emit(")");
+
+
+	code.emit(visit(ctx->statement()).as<string>());
+
+
+	return nullptr;
+}
 Object Converter::visitExpression(PascalParser::ExpressionContext *ctx)
 {
     PascalParser::SimpleExpressionContext *simpleCtx1 =
