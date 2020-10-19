@@ -481,6 +481,7 @@ Object Converter::visitCaseStatement(PascalParser::CaseStatementContext *ctx)
 	code.emit("switch(");
 	code.emit(visit(ctx->expression()).as<string>());
 	code.emit(") {");
+	code.indent();
 
 	PascalParser::CaseBranchListContext *branchListCtx = ctx->caseBranchList();
 	for (PascalParser::CaseBranchContext *branchCtx :branchListCtx->caseBranch())
@@ -488,29 +489,26 @@ Object Converter::visitCaseStatement(PascalParser::CaseStatementContext *ctx)
 		PascalParser::CaseConstantListContext *constListCtx = branchCtx->caseConstantList();
 		PascalParser::StatementContext *stmtCtx = branchCtx->statement();
 
-		if (constListCtx != nullptr)
-		{
+		if (constListCtx != nullptr) {
 			// Loop over the CASE constants of each CASE branch.
-			for (PascalParser::CaseConstantContext *caseConstCtx :constListCtx->caseConstant())
-			{
-				code.emit("case ");
+			for (PascalParser::CaseConstantContext *caseConstCtx :constListCtx->caseConstant()) {
+				code.emitStart("case ");
 				code.emit(to_string(caseConstCtx->value));
-				code.emit(":");
+				code.emitEnd(":");
 			}
-			visit(stmtCtx);
-		}
-		else
-		{
-			visit(branchCtx);
-			visit(stmtCtx);
-		}
-		code.emit("break; ");
-	}
 
-	code.emitEnd("}");
+			visit(stmtCtx);
+			code.emitLine("break; ");
+		}
+		else {
+			visit(branchCtx);
+		}
+	}
+	code.emit("}");
 
 	return nullptr;
-}
+}	
+
 Object Converter::visitProcedureStatement(PascalParser::ProcedureCallStatementContext *ctx)
 {
 	string name = (visit(ctx->procedureName()));
