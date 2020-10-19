@@ -460,6 +460,7 @@ Object Converter::visitForStatement(PascalParser::ForStatementContext *ctx)
 
 	return nullptr;
 }
+
 Object Converter::visitIfStatement(PascalParser::IfStatementContext *ctx)
 {
 	code.emit("if  (");
@@ -468,11 +469,11 @@ Object Converter::visitIfStatement(PascalParser::IfStatementContext *ctx)
 
 	visit(ctx->trueStatement());
 
-	code.emit("else ");
+	if(ctx->falseStatement() != nullptr) {
+		code.emitStart("else ");
+		visit(ctx->falseStatement());
+	}
 
-	visit(ctx->falseStatement());
-
-	
 	return nullptr;
 }
 	
