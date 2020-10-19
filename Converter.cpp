@@ -475,7 +475,42 @@ Object Converter::visitIfStatement(PascalParser::IfStatementContext *ctx)
 	
 	return nullptr;
 }
+	
+Object Converter::visitCaseStatement(PascalParser::CaseStatementContext *ctx)
+{
+	code.emit("switch(");
+	code.emit(visit(ctx->expression()).as<string>());
+	code.emit(") {");
 
+	PascalParser::CaseBranchListContext *branchListCtx = ctx->caseBranchList();
+	for (PascalParser::CaseBranchContext *branchCtx :branchListCtx->caseBranch())
+	{
+		PascalParser::CaseConstantListContext *constListCtx = branchCtx->caseConstantList();
+		PascalParser::StatementContext *stmtCtx = branchCtx->statement();
+
+		if (constListCtx != nullptr)
+		{
+			// Loop over the CASE constants of each CASE branch.
+			for (PascalParser::CaseConstantContext *caseConstCtx :constListCtx->caseConstant())
+			{
+				code.emit("case ");
+				code.emit(to_string(caseConstCtx->value));
+				code.emit(":");
+			}
+			visit(stmtCtx);
+		}
+		else
+		{
+			visit(branchCtx);
+			visit(stmtCtx);
+		}
+		code.emit("break; ");
+	}
+
+	code.emitEnd("}");
+
+	return nullptr;
+}
 Object Converter::visitProcedureStatement(PascalParser::ProcedureCallStatementContext *ctx)
 {
 	string name = (visit(ctx->procedureName()));
