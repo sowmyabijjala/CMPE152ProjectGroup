@@ -521,6 +521,30 @@ Object Converter::visitProcedureStatement(PascalParser::ProcedureCallStatementCo
 
 	return nullptr;
 }
+Object Converter::visitFunctionCallFactor(PascalParser::FunctionCallFactorContext *ctx)
+{
+    PascalParser::FunctionCallContext *callCtx = ctx->functionCall();
+    SymtabEntry *routineId = callCtx->functionName()->entry;
+    PascalParser::ArgumentListContext *argListCtx = callCtx->argumentList();
+	string name = routineId->getName();
+	//gotta code.emit the return type
+	code.emit(name);
+	code.emit("(");
+	//Parameters - argument lists
+	vector<SymtabEntry *> *parms = routineId->getRoutineParameters();
+	for (int i = 0; i < parms->size(); i++)
+	{
+		SymtabEntry *parmId = (*parms)[i];
+		string parmName = parmId->getName();
+		code.emit(parmName);
+		if(i- parms->size()>0)
+			code.emit(",");
+	}
+	code.emit(")");
+	code.emit(";");
+
+	return nullptr;
+}
 Object Converter::visitExpression(PascalParser::ExpressionContext *ctx)
 {
     PascalParser::SimpleExpressionContext *simpleCtx1 =
