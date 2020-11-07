@@ -162,27 +162,90 @@ void StatementGenerator::emitWhile(PascalParser::WhileStatementContext *ctx)
 
 void StatementGenerator::emitFor(PascalParser::ForStatementContext *ctx)
 {
-    /***** Complete this member function. *****/
 		Label *ForTopLabel  = new Label();
 	    Label *ForExitLabel = new Label();
-	    Label *ForTest = new Label();
+	    Label *ForContinueLabel = new Label();
+	    Label *ForBreakLabel = new Label();
+
+	    PascalParser::ExpressionContext *startExprCtx = ctx->expression()[0];
+	    PascalParser::ExpressionContext *stopExprCtx = ctx->expression()[1];
+	    PascalParser::FactorContext *varCtx = ctx->expression()[0] -> simpleExpression()[0] -> term()[0] -> factor()[0];
+
+	    bool to = ctx->TO() != nullptr;
+
+	    string VarText = ctx->variable()->getText();
+	    string VarType = typeDescriptor(varCtx->type);
+
+	    compiler->visit(startExprCtx);
+	    emit(PUTSTATIC, programName + ("/" + VarText + " " + VarType));
 
 	    emitLabel(ForTopLabel);
 
-	    compiler->visit(ctx->statement());
-	    compiler->visit(ctx->expression()[0]);
-	    compiler->visit(ctx->expression()[1]);
+	    compiler->visit(ctx->variable());
+	    compiler->visit(stopExprCtx);
 
+	    if (to) {
+	    	emit(IF_ICMPGT, ForBreakLabel);
+	    }
+	    else {
+	    	emit(IF_ICMPLT, ForBreakLabel);
+	    }
+
+	    //push 0
+	    emit(ICONST_0);
+	    //go to continue
+	    emit(GOTO, ForContinueLabel);
+
+	    emitLabel(ForBreakLabel);
+
+	    //push 1
+	    emit(ICONST_1);
+
+	    //check continue loop
+	    emitLabel(ForContinueLabel);
+	    //check the conditional
 	    emit(IFNE, ForExitLabel);
-	    compiler->visit(ctx->statement());
-	    emit(GOTO, ForTopLabel);
 
+	    //Emit statement
+	    compiler->visit(ctx->statement());
+	    //emit variable
+	    compiler->visit(ctx->variable());
+	    emit(ICONST_1);
+
+	    if(to){
+	    	//incremenet the TO
+	    	emit(IADD);
+	    }
+
+	    // need to add more
+
+	    emit(GOTO, ForTopLabel);
 	    emitLabel(ForExitLabel);
 }
 
 void StatementGenerator::emitProcedureCall(PascalParser::ProcedureCallStatementContext *ctx)
 {
     /***** Complete this member function. *****/
+	PascalParser::ArgumentListContext *argListCtx = ctx-> argumentList();
+	if(ctx->argumentList() != NULL){
+		compiler ->visit(argListCtx);
+	}
+
+	SymtabEntry * procSymtab = ctx->procedureName()->entry;
+	vector<SymtabEntry *> *parmIds = procSymtab->getRoutineParameters();
+	string procName = procSymtab->getName();
+	string header (procName + "(");
+
+	if (parmIds != nullptr){
+		for (SymtabEntry *parmId : *parmIds){
+			header += typeDescriptor(parmId);
+		}
+	}
+
+	header += ")" + typeDescriptor(procSymtab);
+
+	emit (INVOKESTATIC, programName +"/"+ header);
+	compiler->visit(ctx->procedureName());
 }
 
 void StatementGenerator::emitFunctionCall(PascalParser::FunctionCallContext *ctx)
