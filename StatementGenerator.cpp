@@ -94,38 +94,90 @@ void StatementGenerator::emitCase(PascalParser::CaseStatementContext *ctx)
 
     /***** Complete this member function. *****/
 
+	int bcount = 0;
 	PascalParser::ExpressionContext *exprCtx = ctx->expression();
 	PascalParser::CaseBranchListContext *branchListCtx = ctx->caseBranchList();
-	vector<Label *> branchLabels;
+
+	int branches = (branchListCtx->children.size()/2)+1;
+	Label branchLabels[branches];
 	Label *exitcase = new Label();
 
-	branchLabels.push_back(new Label());
 
 	compiler->visit(exprCtx);
+
 	emit(LOOKUPSWITCH);
-	int i = 0;
+	struct count{
+		int val;
+		int branchnum;
+	};
+	count pair[100];
+
+	int size = 0;
 
 	if(branchListCtx != nullptr)
 	{
 		for(PascalParser::CaseBranchContext *branchCtx :branchListCtx->caseBranch())
 		{
-			PascalParser::CaseConstantListContext *constListCtx =branchCtx->caseConstantList();
-			for (PascalParser::CaseConstantContext *caseConstCtx : constListCtx->caseConstant())
+			if(branchCtx->caseConstantList() != NULL)
 			{
-				string name = caseConstCtx->getText();
-				emitLabel(name, branchLabels[i]);
-				PascalParser::StatementContext *stmtCtx = branchCtx->statement();
-				compiler->visit(stmtCtx);
+				PascalParser::CaseConstantListContext *constListCtx =branchCtx->caseConstantList();
+				for (PascalParser::CaseConstantContext *caseConstCtx : constListCtx->caseConstant())
+				{
+					if(caseConstCtx != NULL)
+					{
+						int v = caseConstCtx->value;
+						pair[size].val = v;
+						pair[size].branchnum = bcount;
+						size++;
+					}
+				}
+				bcount++;
+			}
+		}
+	}
+
+	int k, j, min;
+
+	for(k = 0; k< size-1; k++)
+	{
+		min = k;
+
+		for(j = k+1; j<size; j++)
+		{
+
+			if(pair[j].val < pair[min].val)
+			{
+				min = j;
+			}
+		}
+
+		count temp = pair[min];
+		pair[min] = pair[k];
+		pair[k] = temp;
+	}
+
+	for(int i = 0; i< size; i++)
+	{
+		emitLabel(pair[i].val, &branchLabels[pair[i].branchnum]);
+	}
+
+	emitLabel("default", exitcase);
+
+	int i = 0;
+	if(branchListCtx != nullptr)
+	{
+		for(PascalParser::CaseBranchContext *branchCtx :branchListCtx->caseBranch())
+		{
+			if(branchCtx->statement() != nullptr)
+			{
+				emitLabel(&branchLabels[i]);
+				compiler->visit(branchCtx->statement());
 				emit(GOTO, exitcase);
 			}
 			i++;
 		}
+		emitLabel(exitcase);
 	}
-	emitLabel(exitcase);
-
-
-
-
 
 }
 
@@ -153,8 +205,9 @@ void StatementGenerator::emitWhile(PascalParser::WhileStatementContext *ctx)
 	    emitLabel(loopTopLabel);
 
 	    compiler->visit(ctx->expression());
-	    emit(IFNE, loopExitLabel);
+	    emit(IFEQ, loopExitLabel);
 	    compiler->visit(ctx->statement());
+
 	    emit(GOTO, loopTopLabel);
 
 	    emitLabel(loopExitLabel);
@@ -163,31 +216,122 @@ void StatementGenerator::emitWhile(PascalParser::WhileStatementContext *ctx)
 void StatementGenerator::emitFor(PascalParser::ForStatementContext *ctx)
 {
     /***** Complete this member function. *****/
-		Label *ForTopLabel  = new Label();
-	    Label *ForExitLabel = new Label();
-	    Label *ForTest = new Label();
+	//getsttic j putstatic variable in begin
+			Label *ForTopLabel  = new Label();
+		    Label *ForExitLabel = new Label();
+		    Label *ForContinueLabel = new Label();
+		    Label *ForBreakLabel = new Label();
 
-	    emitLabel(ForTopLabel);
+		    PascalParser::ExpressionContext *startExprCtx = ctx->expression()[0];
+		    PascalParser::ExpressionContext *stopExprCtx = ctx->expression()[1];
+		    PascalParser::FactorContext *varCtx = ctx->expression()[0] -> simpleExpression()[0] -> term()[0] -> factor()[0];
 
-	    compiler->visit(ctx->statement());
-	    compiler->visit(ctx->expression()[0]);
-	    compiler->visit(ctx->expression()[1]);
+		    bool to = ctx->TO() != nullptr;
 
-	    emit(IFNE, ForExitLabel);
-	    compiler->visit(ctx->statement());
-	    emit(GOTO, ForTopLabel);
+		    string VarText = ctx->variable()->getText();
+		    string VarType = typeDescriptor(varCtx->type);
 
-	    emitLabel(ForExitLabel);
+		    compiler->visit(startExprCtx);
+		    emit(PUTSTATIC, programName + ("/" + VarText + " " + VarType));
+
+		    emitLabel(ForTopLabel);
+
+		    compiler->visit(ctx->variable());
+		    compiler->visit(stopExprCtx);
+
+		    if (to) {
+		    	emit(IF_ICMPGT, ForBreakLabel);
+		    }
+		    else {
+		    	emit(IF_ICMPLT, ForBreakLabel);
+		    }
+
+		    //push 0
+		    emit(ICONST_0);
+		    //go to continue
+		    emit(GOTO, ForContinueLabel);
+
+		    emitLabel(ForBreakLabel);
+
+		    //push 1
+		    emit(ICONST_1);
+
+		    //check continue loop
+		    emitLabel(ForContinueLabel);
+		    //check the conditional
+		    emit(IFNE, ForExitLabel);
+
+		    //Emit statement
+		    compiler->visit(ctx->statement());
+		    //emit variable
+		    compiler->visit(ctx->variable());
+		    emit(ICONST_1);
+
+		    if(to){
+		    	//incremenet the TO
+		    	emit(IADD);
+		    }
+		    else
+		    {
+		    	emit(ISUB);
+		    }
+		    //compiler->visit(ctx->statement());
+		    // need to add more
+
+		    emit(GOTO, ForTopLabel);
+		    emitLabel(ForExitLabel);
 }
 
 void StatementGenerator::emitProcedureCall(PascalParser::ProcedureCallStatementContext *ctx)
 {
     /***** Complete this member function. *****/
+	/***** Complete this member function. *****/
+		PascalParser::ArgumentListContext *argListCtx = ctx-> argumentList();
+		if(ctx->argumentList() != NULL){
+			compiler ->visit(argListCtx);
+		}
+
+		SymtabEntry * procSymtab = ctx->procedureName()->entry;
+		vector<SymtabEntry *> *parmIds = procSymtab->getRoutineParameters();
+		string procName = procSymtab->getName();
+		string header (procName + "(");
+
+		if (parmIds != nullptr){
+			for (SymtabEntry *parmId : *parmIds){
+				header += typeDescriptor(parmId);
+			}
+		}
+
+		header += ")" + typeDescriptor(procSymtab);
+
+		emit (INVOKESTATIC, programName +"/"+ header);
+		compiler->visit(ctx->procedureName());
 }
 
 void StatementGenerator::emitFunctionCall(PascalParser::FunctionCallContext *ctx)
 {
     /***** Complete this member function. *****/
+	/***** Complete this member function. *****/
+		PascalParser::ArgumentListContext *argListCtx = ctx-> argumentList();
+		if(ctx->argumentList() != NULL){
+			compiler ->visit(argListCtx);
+		}
+
+		SymtabEntry * procSymtab = ctx->functionName()->entry;
+		vector<SymtabEntry *> *parmIds = procSymtab->getRoutineParameters();
+		string procName = procSymtab->getName();
+		string header (procName + "(");
+
+		if (parmIds != nullptr){
+			for (SymtabEntry *parmId : *parmIds){
+				header += typeDescriptor(parmId);
+			}
+		}
+
+		header += ")" + typeDescriptor(procSymtab);
+
+		emit (INVOKESTATIC, programName +"/"+ header);
+		compiler->visit(ctx->functionName());
 }
 
 void StatementGenerator::emitCall(SymtabEntry *routineId,
