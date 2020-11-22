@@ -7,7 +7,7 @@ grammar Fortran;
     using namespace intermediate::symtab;
     using namespace intermediate::type;
 }
-
+ 
 program           : programHeader block programIdentifier ; // this is the definition for the whole program
 programHeader     : PROGRAM programIdentifier implicitNone ;
 
@@ -64,8 +64,11 @@ enumerationConstant : constantIdentifier ;
 subrangeType        : constant '..' constant ;
 //^ down to here    
 
-statement : ifStatement //removed compound statement bc we don't use begin/end
+statement : //removed compound statement bc we don't use begin/end
+					  ifStatement 
           | assignmentStatement
+          | doWhileStatement
+          | writeStatement
           //| emptyStatement removed to support statementList function
           ;
           
@@ -101,6 +104,7 @@ factor              locals [ Typespec *type = nullptr ]
     : variable             # variableFactor
     | number               # numberFactor
     | NOT factor           # notFactor
+    | stringConstant		   #stringFactor
     | '(' expression ')'   # parenthesizedFactor
     ;
     
@@ -111,6 +115,15 @@ mulOp : '*' | '/' | AND ;
 ifStatement    : IF LPAREN expression RPAREN THEN trueStatement ( ELSE falseStatement )? END IF;
 trueStatement  : statementList ;
 falseStatement : statementList ;
+
+doWhileStatement : DO WHILE LPAREN expression RPAREN trueStatement END DO;
+
+printStatement: PRINT '*' (',' STRING)* //using writeStatement instead of printStatement for now
+	| PRINT '*' (',' variable)*;
+
+writeStatement   : PRINT '*' ',' writeArguments ;
+writeArguments   :  writeArgument (',' writeArgument)* ;
+writeArgument    : expression ;
 
 fragment A : ('a' | 'A') ;
 fragment B : ('b' | 'B') ;
@@ -143,6 +156,7 @@ PROGRAM   : P R O G R A M ;
 CONST     : C O N S T ;
 IMPLICIT  : I M P L I C I T;
 END				: E N D;
+
 //logical operators
 AND				: '.' A N D '.';
 OR				: '.' O R '.';
@@ -153,6 +167,11 @@ NOT_EQV: '.' N E Q V '.';
 IF        : I F ;
 THEN      : T H E N ;
 ELSE      : E L S E ;
+
+DO				: D O ;
+WHILE			: W H I L E ;
+
+PRINT	: P R I N T ;
 
 IDENTIFIER : [a-zA-Z][a-zA-Z0-9]* ;
 
@@ -166,17 +185,17 @@ REAL       : INTEGER '.' INTEGER
            | INTEGER '.' INTEGER ('e' | 'E') ('+' | '-')? INTEGER
            ;
 
-QUOTE     : '\'' ;
+QUOTE     : '"' ;
 CHARACTER : QUOTE CHARACTER_CHAR QUOTE ;
 STRING    : QUOTE STRING_CHAR* QUOTE ;
 
-fragment CHARACTER_CHAR : ~('\'')   // any non-quote character
+fragment CHARACTER_CHAR : ~('"')   // any non-quote character
                         ;
 
-fragment STRING_CHAR : QUOTE QUOTE  // two consecutive quotes
-                     | ~('\'')      // any non-quote character
+fragment STRING_CHAR :  ~('"')      // any non-quote character
                      ;
+                     
+                     
+COMMENT : '!' COMMENT_CHARACTER* NEWLINE -> skip ;
 
-COMMENT : '{' COMMENT_CHARACTER* '}' -> skip ;
-
-fragment COMMENT_CHARACTER : ~('}') ;
+fragment COMMENT_CHARACTER : ~('\n') ;
