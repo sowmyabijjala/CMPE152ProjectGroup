@@ -1,0 +1,29 @@
+program pname
+implicit none
+
+real::a, b
+
+a=10
+if(a==10) then
+	b=10
+else
+	b=0
+end if
+
+end program pname
+
+
+program factorial
+implicit none  
+
+   integer :: nfact, n
+   
+	nfact = 1
+	n = 1
+    
+   do while (n <= 10)       
+      nfact = nfact * n 
+      n = n + 1
+      print *, n, " ", nfact
+   end do 
+end program factorial  
