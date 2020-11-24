@@ -12,5 +12,9 @@ A minimally acceptable compiler project has at least these features:
 • Execute the resulting .class file.
 • No crashes (e.g., null pointer exceptions).
 
-
-
+Each team will write a report (5-10 pp.) that includes:
+• A high-level description of the design of the compiler with UML diagrams of the major
+classes.
+• The grammar for your source language, either as syntax diagrams or in BNF.
+• Code templates that show the Jasmin code your compiler generates for some key
+constructs of the source language. 
