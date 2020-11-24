@@ -123,6 +123,22 @@ printStatement   : PRINT '*' ',' printArguments ;
 printArguments   :  printArgument (',' printArgument)* ;
 printArgument    : expression ;
 
+//Function declaration
+functionHead      : FUNCTION  routineIdentifier '(' parameters? ')' ('result' '(' variable ')')? statementList END FUNCTION routineIdentifier;
+routineIdentifier   locals [ Typespec *type = nullptr, SymtabEntry *entry = nullptr ]
+    : IDENTIFIER ;
+parameters                : '(' parameterIdentifierList ')' ;
+parameterIdentifierList   : parameterIdentifier ( ',' parameterIdentifier )* ;
+parameterIdentifier   locals [ Typespec *type = nullptr, SymtabEntry *entry = nullptr ]
+    : IDENTIFIER ;
+    
+//calling a funtion
+functionCall : functionName '(' argumentList? ')';
+functionName    locals [ Typespec *type = nullptr, SymtabEntry *entry = nullptr ] 
+    : IDENTIFIER ;
+argumentList : argument ( ',' argument )* ;
+argument     : expression ;
+
 fragment A : ('a' | 'A') ;
 fragment B : ('b' | 'B') ;
 fragment C : ('c' | 'C') ;
@@ -170,6 +186,8 @@ DO				: D O ;
 WHILE			: W H I L E ;
 
 PRINT	: P R I N T ;
+FUNCTION  : F U N C T I O N ;
+
 
 IDENTIFIER : [a-zA-Z][a-zA-Z0-9]* ;
 
