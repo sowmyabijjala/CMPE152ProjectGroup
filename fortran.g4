@@ -65,14 +65,14 @@ subrangeType        : constant '..' constant ;
 //^ down to here    
 
 statement : //removed compound statement bc we don't use begin/end
-					  ifStatement 
+			ifStatement 
           | assignmentStatement
           | doWhileStatement
-          | writeStatement
-          //| emptyStatement removed to support statementList function
+          | printStatement
+        //| emptyStatement removed to support statementList function
           ;
           
-statementList       : statement ( statement )* ;
+statementList    : statement ( statement )* ;
 //emptyStatement : ;
 
 assignmentStatement : lhs '=' rhs;
@@ -104,7 +104,8 @@ factor              locals [ Typespec *type = nullptr ]
     : variable             # variableFactor
     | number               # numberFactor
     | NOT factor           # notFactor
-    | stringConstant		   #stringFactor
+    | characterConstant	   # characterFactor
+    | stringConstant	   #stringFactor
     | '(' expression ')'   # parenthesizedFactor
     ;
     
@@ -118,12 +119,9 @@ falseStatement : statementList ;
 
 doWhileStatement : DO WHILE LPAREN expression RPAREN trueStatement END DO;
 
-printStatement: PRINT '*' (',' STRING)* //using writeStatement instead of printStatement for now
-	| PRINT '*' (',' variable)*;
-
-writeStatement   : PRINT '*' ',' writeArguments ;
-writeArguments   :  writeArgument (',' writeArgument)* ;
-writeArgument    : expression ;
+printStatement   : PRINT '*' ',' printArguments ;
+printArguments   :  printArgument (',' printArgument)* ;
+printArgument    : expression ;
 
 fragment A : ('a' | 'A') ;
 fragment B : ('b' | 'B') ;
