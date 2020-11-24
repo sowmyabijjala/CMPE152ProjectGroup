@@ -7,8 +7,8 @@ grammar Fortran;
     using namespace intermediate::symtab;
     using namespace intermediate::type;
 }
- 
-program           : programHeader block programIdentifier ; // this is the definition for the whole program
+
+program           : programHeader block programIdentifier (function)*; // this is the definition for the whole program
 programHeader     : PROGRAM programIdentifier implicitNone ;
 
 programIdentifier   locals [ SymtabEntry *entry = nullptr ]
@@ -39,7 +39,7 @@ realConstant    : REAL;
 sign : '-' | '+' ;
 
 variablesPart            : variableDeclarationsList ;
-variableDeclarationsList : variableDeclarations ( NEWLINE variableDeclarations )* ; //doesn't support arrays
+variableDeclarationsList : variableDeclarations ( variableDeclarations )* ; //doesn't support arrays
 variableDeclarations     : typeSpecification '::' variableIdentifierList ;
 variableIdentifierList   : variableIdentifier ( ',' variableIdentifier )* ;
 
@@ -101,11 +101,13 @@ term                locals [ Typespec *type = nullptr ]
     : factor (mulOp factor)* ;
 
 factor              locals [ Typespec *type = nullptr ] 
-    : variable             # variableFactor
+    : 
+     functionCall		   # functionCallFactor
+    | variable             # variableFactor
     | number               # numberFactor
     | NOT factor           # notFactor
     | characterConstant	   # characterFactor
-    | stringConstant	   #stringFactor
+    | stringConstant	   # stringFactor
     | '(' expression ')'   # parenthesizedFactor
     ;
     
@@ -124,14 +126,15 @@ printArguments   :  printArgument (',' printArgument)* ;
 printArgument    : expression ;
 
 //Function declaration
-functionHead      : FUNCTION  routineIdentifier '(' parameters? ')' ('result' '(' variable ')')? statementList END FUNCTION routineIdentifier;
+function    : FUNCTION  routineIdentifier parameters? implicitNone ('result' '(' variable ')')?  declarations statementList END FUNCTION routineIdentifier;
 routineIdentifier   locals [ Typespec *type = nullptr, SymtabEntry *entry = nullptr ]
     : IDENTIFIER ;
 parameters                : '(' parameterIdentifierList ')' ;
 parameterIdentifierList   : parameterIdentifier ( ',' parameterIdentifier )* ;
 parameterIdentifier   locals [ Typespec *type = nullptr, SymtabEntry *entry = nullptr ]
     : IDENTIFIER ;
-    
+			 
+ 
 //calling a funtion
 functionCall : functionName '(' argumentList? ')';
 functionName    locals [ Typespec *type = nullptr, SymtabEntry *entry = nullptr ] 
