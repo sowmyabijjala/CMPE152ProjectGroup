@@ -27,3 +27,39 @@ implicit none
       print *, n, " ", nfact
    end do 
 end program factorial  
+
+
+program calling
+implicit none
+   real :: a
+   a = areaofcircle(2.0) 
+   
+   Print *, "The area of a circle with radius 2.0 is"
+   Print *, a
+   
+end program calling
+
+
+! this function computes the area of a circle with radius r  
+
+function areaofcircle (r)  
+
+! function result     
+
+implicit none      
+  
+   real :: areaofcircle
+
+   real :: r     
+   real :: pi
+   
+   pi = 4 * atan (1.0)     
+   areaofcircle = pi * r*r  
+   
+end function areaofcircle
+
+function hello
+	implicit none
+		
+	print *, "Hello world"
+end function hello
