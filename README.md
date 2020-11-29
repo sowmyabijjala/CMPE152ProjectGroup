@@ -4,7 +4,7 @@ CMPE 152 - SJSU Fall 2020
 
 Members: Sowmya, Anmol, Sawyer and Danielle 
 
-## Team Compiler Project Requirements 
+## Team Compiler Project Requirements - Fortran 77
 
 • Invent a new programming language or choose a subset of an existing language.
 
